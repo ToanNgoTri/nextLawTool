@@ -3,6 +3,16 @@ import React from 'react'
 import styles from '../page.module.css'
 
 export default function Page() {
+
+
+    
+
+
+
+
+
+
+
   return (
     <div id={styles.container}>
       <div id={styles.inner_container}>
