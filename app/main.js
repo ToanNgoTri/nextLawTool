@@ -1,67 +1,6 @@
-"use client";
-import { useState } from "react";
-// import {getValueinArea} from '../../public/asset/'
-import styles from "../page.module.css";
-import ObjectLawPair from './asset/ObjectLawPair'
-
-export default function Page() {
-  const [URL, setURL] = useState("");
-  const [lawNumberText, setLawNumber] = useState("");
-  const [unitPublishText, setUnitPublish] = useState("");
-  const [lawKindText, setLawKind] = useState("");
-  const [nameSignText, setNameSign] = useState("");
-  const [lawDaySignText, setLawDaySign] = useState("");
-  const [lawDescriptionText, setLawDescription] = useState("");
-  const [roleSignText, setRoleSign] = useState("");
-  const [lawRelatedText, setLawRelated] = useState("");
-  const [contentInputText, setContentInput] = useState("")
-  const [contentOutputText, setContentOutput] = useState("");
-  const [lawInfoPush, setLawInfoPush] = useState({})
-
-  const [fullText, setFullText] = useState("")
-  const [textForMachine, setTextForMachine] = useState({})
-
-  async function receive() {
-    console.log(URL);
-    
-    fetch(`/api/url?url=${URL}`).then((res) =>
-      res.json().then((res) => {
-        
-        // console.log(res.data)
 
 
-        setLawNumber(res.data.lawNumber)
-        setUnitPublish(res.data.unitPublish)
-        setLawKind(res.data.lawKind)
-        setNameSign(res.data.nameSign)
-        setLawDaySign(res.data.lawDaySign)
-        setLawDescription(res.data.lawDescription)
-        setLawRelated(res.data.lawRelated)
-        setRoleSign(res.data.roleSign)
-        setContentInput(res.data.content)
-
-        
-      })
-    );
-
-setLawNumber
-setUnitPublish
-setLawKind
-setNameSign
-setLawDaySign
-setLawDescription
-setRoleSign
-setContentInput
-setLawRelated
-setContentOutput
-  }
-
-
-
-
-
-
-  function beep() {
+function beep() {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   
     // Tạo một oscillator (dao động) để phát âm thanh
@@ -98,19 +37,23 @@ setContentOutput
   let lawNameDisplay;
   
   function getValueinArea() {
-    unitPublish = unitPublishText.split("; ");
-    lawDaySign = lawDaySignText.replace(/\s/gim, "");
+    unitPublishString = unitPublishText.value;
+    unitPublish = unitPublishString.split("; ");
+    lawDaySign = document.querySelector("#lawDaySign").value.replace(/\s/gim, "");
   
-    nameSignArrayDemo = nameSignText.split("; ");
+    nameSignString = document.querySelector("#nameSign").value;
+    nameSignArrayDemo = nameSignString.split("; ");
     nameSign = [];
   
-    lawDescription = lawDescriptionText
+    lawDescription = document.querySelector("#lawDescription").value;
   
-    lawNumber = lawNumberText.replace(/\s/gim, "");
+    lawNumber = document.querySelector("#lawNumber").value.replace(/\s/gim, "");
   
     lawRelated = [];
   
-    lawKind = lawKindText.replace(/(^\s*|\s*$)/gim, "");
+    lawKind = document
+      .querySelector("#lawKind")
+      .value.replace(/(^\s*|\s*$)/gim, "");
   
     lawNameDisplay = lawDescription;
     if (lawKind.match(/^(luật|bộ luật)/i)) {
@@ -131,7 +74,7 @@ setContentOutput
       lawNameDisplay = lawKind + " số " + lawNumber;
     }
   
-    contentText = contentInputText;
+    contentText = document.querySelector("#content_input").value;
     contentText = contentText.replace(/(^\s*|\s*$)/gim, ""); // bỏ các khoảng trắng đầu và cuối nếu có
   }
   
@@ -500,13 +443,13 @@ setContentOutput
       return (lawRelatedObject[law] = 0);
     });
   
-    let lawPairObject = ObjectLawPair;
-    // await fetch("once/asset/ObjectLawPair.json")
-    //   .then((response) => response.json()) // Chuyển đổi response thành JSON
-    //   .then((data) => {
-    //     lawPairObject = data;
-    //   })
-    //   .catch((error) => console.log("Error:", error));
+    let lawPairObject = {};
+    await fetch("../asset/ObjectLawPair.json")
+      .then((response) => response.json()) // Chuyển đổi response thành JSON
+      .then((data) => {
+        lawPairObject = data;
+      })
+      .catch((error) => console.log("Error:", error));
   
     for (let a = 0; a < Object.keys(lawRelatedObject).length; a++) {
       if (
@@ -588,8 +531,8 @@ setContentOutput
       getValueinArea();
       let result;
       if (
-        roleSignText &&
-        lawRelatedText
+        document.querySelector("#roleSign").value &&
+        document.querySelector("#lawRelated").value
       ) {
         result = await getNormalTextInfo();
       } else {
@@ -605,7 +548,7 @@ setContentOutput
   }
   
   function convertPartOne() {
-    let b = contentInputText;
+    let b = document.querySelector("#content_input").value;
     let b1 = b.replace(/^ */gim, ""); // bỏ các space ở đầu mỗi dòng
     let b2 = b1.replace(/\(*đã k(ý|í)\)*/gim, "");
     b2 = b2.replace(/\[daky\]/gim, "");
@@ -743,6 +686,7 @@ setContentOutput
   
     let partTwo = convertPartTwo(partOne);
   
+    // document.querySelector(".output").value = b9;
   
     nameSign = nameSignArrayDemo;
     roleSign = getRoleSign(partOne, nameSign);
@@ -762,9 +706,9 @@ setContentOutput
   
     lawDayActive = getLawDayActive(partOne, lawDaySign);
   
-    if (lawRelatedText) {
+    if (document.querySelector("#lawRelated").value) {
       lawRelated = await getLawRelated(
-        lawRelatedText,
+        document.querySelector("#lawRelated").value,
         lawDayActive
       );
     } else {
@@ -795,14 +739,14 @@ setContentOutput
     console.log("nameSign", lawInfo["nameSign"]);
     console.log("roleSign", lawInfo["roleSign"]);
   
-    setContentOutput(partTwo);
+    document.querySelector(".output").value = partTwo;
     return { lawInfo };
   }
   
   async function getNormalTextInfo() {
     console.log("getNormalTextInfo");
   
-    let roleSignString = roleSignText;
+    let roleSignString = document.querySelector("#roleSign").value;
   
     nameSign = getArrangeUnitPublic(
       roleSignString,
@@ -817,32 +761,18 @@ setContentOutput
       unitPublish
     )["unitPbDemo"];
   
-    let contentRoleSign = roleSignText;
+    let contentRoleSign = document.querySelector("#roleSign").value;
     roleSign = getRoleSign(contentRoleSign, nameSign);
   
     lawDayActive = getLawDayActive(contentText, lawDaySign);
   
-    let introduceString = lawRelatedText;
+    let introduceString = document.querySelector("#lawRelated").value;
     lawRelated = await getLawRelated(introduceString, lawDayActive);
   
-    setContentOutput(contentText)
+    document.querySelector(".output").value = contentText;
   
     lawDaySign = addDaysToDate(lawDaySign, 0);
   
-    setLawInfoPush({
-      unitPublish,
-      lawDaySign,
-      nameSign,
-      roleSign,
-      lawDayActive,
-      lawDescription,
-      lawNumber,
-      lawRelated,
-      lawKind,
-      lawNameDisplay,
-    });
-
-
     lawInfo = {
       unitPublish,
       lawDaySign,
@@ -874,7 +804,7 @@ setContentOutput
   async function convertContent() {
     data = [];
   
-    let input = contentOutputText;
+    let input = document.querySelector(".output").value;
   
     let i0 = input.replace(
       /^(Điều|Ðiều|Điều)( |\u00A0)+(\d+\w?)\.(.*)/gim,
@@ -888,10 +818,19 @@ setContentOutput
     );
   
     let i2 = i1.replace(/­/gm, "");
+    // let i2 = i1
+    // Bỏ . ở cuối hàng trong Điều
+  
+    // let i2 = i1.replace(/^(\s)*(.*)/gm, "$2");
+    // đề phòng có khoảng trống đầu hàng, cut it
+  
+    // let i3 = i2.replace(/^\n+/gm, "");
+    // // bỏ khoảng trống giữa các row
   
     let i3 = i2.replace(/(?<=^Chương (V|I|X|\d)*)\./gim, "");
   
     let i4;
+    // i6 = i5.replace(/^Chương (.*)\n(.*)/gim, "Chương $1: $2");
   
     let i4a = [];
     let initial = 4; // số dòng tối đa mặc định có thể bị xuống dòng làm cho phần 'chương' không được gộp
@@ -917,6 +856,8 @@ setContentOutput
     let i6 = i5.replace(/(\[|\()\d*(\]|\))/gim, ""); // bỏ chỉ mục
   
     let i7 = i6.replace(/\u00A0/gim, " ");
+  
+    // let i8 =i7.replace(/(?<=^Chương (V|I|X|\d).*)\n(?!(Điều|Ðiều|Điều) \d.*)/gim,' ')
   
     let i8;
     let i8a = []; // kết nối "Phần thứ với nội dung "phần thứ ...", trường hợp bị tách 2 hàng
@@ -958,9 +899,11 @@ setContentOutput
     i10 = i10a[initial - 1];
     i10 = i10.replace(/(?<=^Chương (V|I|X|\d)*) /gim, ": ");
   
+    // let i10 = i9.replace(/(?<=\w)\/(?=\w)/gim, "\\"); // loại dấu division spla sh bằng dấu \
+    // let i10 = i9
+  
     contentText = i10;
-    setFullText(i10)
-    setContentOutput(i10);
+    document.querySelector(".output").value = i10;
   
     if (i10.match(/^CHƯƠNG.*/i)) {
       // nếu có chương ...
@@ -1071,10 +1014,8 @@ setContentOutput
           }
         }
       }
-      setTextForMachine(data)
-
     } else if (i10.match(/^(Phần|PHẦN)\s(THỨ|I|l|\d).*/i)) {
-      //////////////////////////////////////////////////////////  // nếu có phần thứ ...
+      //////////////////////////////////////////////////////////////////////////////////////////////  // nếu có phần thứ ...
   
       let sectionArray;
   
@@ -1243,11 +1184,9 @@ setContentOutput
           }
         }
       }
-      setTextForMachine(data)
-
     } else if (i10.match(/^(Điều|Điều) */i)) {
       /////////////////////////////////////////  // nếu chỉ có Điều ...
-  let point
+  
       let articleArray = i10.match(/^(Điều|Điều) \d+(.*)$/gim);
   
       articleArray = RemoveNoOrder(articleArray);
@@ -1295,230 +1234,9 @@ setContentOutput
   
         data[c] = { [articleArray[c]]: e };
       }
-      setTextForMachine(data)
     }
   
     console.table("data", data);
     return data;
   }
-
-
   
-  function addJSONFile() {
-    let yearSign = parseInt(lawInfo["lawDaySign"].getYear()) + 1900;
-    let lawNumberForPush =
-      lawInfo["lawNumber"] +
-      (!lawInfo["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
-        ? "(" + yearSign + ")"
-        : "");
-  
-        console.log('lawInfo',lawInfo);
-        console.log('lawNumberForPush',lawNumberForPush);
-        
-    fetch("/api/changejsonfile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        lawInfo: lawInfo,
-        lawNumber: lawNumberForPush,
-      }),
-    })
-      .then((res) => {
-        res.text();
-        console.log("success");
-      })
-  }
-  
-
-  function Push() {
-    console.log('lawInfo["lawDaySign"]',lawInfoPush);
-    
-    let yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
-    let lawNumberForPush =
-      lawInfoPush["lawNumber"] +
-      (!lawInfoPush["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
-        ? "(" + yearSign + ")"
-        : "");
-  
-    // CHANGE JSON FILE
-    fetch("/api/push", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        dataLaw: textForMachine,
-        lawInfo: lawInfoPush,
-        lawNumber: lawNumberForPush,
-        contentText:fullText,
-      }),
-    }).then((res) => {
-      res.text();
-      console.log("success");
-    });
-    console.log(lawNumberForPush);
-  
-  }
-  
-
-
-
-
-
-  return (
-    <div id={styles.container}>
-      <textarea
-        className={styles.input_area}
-        id={styles.url}
-        value={URL}
-        onChange={(e) => setURL(e.target.value)}
-      ></textarea>
-
-      <div id={styles.inner_container}>
-        <div id={styles.input_container}>
-          <p>lawNumber</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.lawNumber}
-            value={lawNumberText}
-            onChange={(e) => setLawNumber(e.target.value)}
-    ></textarea>
-          <p>unitPublish</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.unitPublish}
-            value={unitPublishText}
-            onChange={(e) => setUnitPublish(e.target.value)}
-    ></textarea>
-          <p>lawKind</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.lawKind}
-            value={lawKindText}
-            onChange={(e) => setLawKind(e.target.value)}
-    ></textarea>
-          <p>nameSign</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.nameSign}
-            value={nameSignText}
-            onChange={(e) => setNameSign(e.target.value)}
-    ></textarea>
-          <p>lawDaySign</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.lawDaySign}
-            value={lawDaySignText}
-            onChange={(e) => setLawDaySign(e.target.value)}
-    ></textarea>
-          <p>lawDescription</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.lawDescription}
-            value={lawDescriptionText}
-            onChange={(e) => setLawDescription(e.target.value)}
-    ></textarea>
-          <p>lawRelated</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.lawRelated}
-            value={lawRelatedText}
-            onChange={(e) => setLawRelated(e.target.value)}
-    ></textarea>
-          <p>roleSign</p>
-          <textarea
-            className={styles.input_area}
-            id={styles.roleSign}
-            value={roleSignText}
-            onChange={(e) => setRoleSign(e.target.value)}
-    ></textarea>
-          <textarea
-            className={styles.input_area}
-            id={styles.content_input}
-            value={contentInputText}
-            onChange={(e) => setContentInput(e.target.value)}
-     ></textarea>
-        </div>
-        <div className={{ ...styles.navi_container, ...styles.navi_input }}>
-          <button
-            type="button"
-            className={styles.navi_btb}
-            onClick={() => goToStartInput()}
-          >
-            Go to Start
-          </button>
-
-          <button
-            type="button"
-            className={styles.navi_btb}
-            onClick={() => goToEndInput()}
-          >
-            Go to End
-          </button>
-        </div>
-
-        <div className={{ ...styles.navi_container, ...styles.navi_output }}>
-          <button
-            type="button"
-            className={styles.navi_btb}
-            onClick={() => goToStartOutput()}
-          >
-            Go to Start
-          </button>
-
-          <button
-            type="button"
-            className={styles.navi_btb}
-            onClick={() => goToEndOutput()}
-          >
-            Go to End
-          </button>
-        </div>
-
-        <div className={styles.btb_container}>
-          <button
-            type="button"
-            className={styles.btb}
-            onClick={() => receive()}
-          >
-            Receive
-          </button>
-
-          <button
-            type="button"
-            className={styles.btb}
-            onClick={() => getInfo()}
-          >
-            Get Infomation
-          </button>
-          <button
-            className={{ ...styles.btb, ...styles.copy_btb }}
-            onClick={() => convertContent()}
-          >
-            Get Content
-          </button>
-          <button
-            className={{ ...styles.btb, ...styles.delete_btb }}
-            onClick={() => Push()}
-          >
-            Push
-          </button>
-          <button
-            className={{ ...styles.btb, ...styles.naviNext_btb }}
-            onClick={() => NaviNext()}
-          >
-            Next
-          </button>
-          <button
-            className={{ ...styles.btb, ...styles.back_btb }}
-            onClick={() => NaviHome()}
-          >
-            Back
-          </button>
-        </div>
-        <textarea className={styles.output} cols="90"
-            value={contentOutputText}
-            onChange={(e) => setContentOutput(e.target.value)}
-        ></textarea>
-      </div>
-    </div>
-  );
-}
