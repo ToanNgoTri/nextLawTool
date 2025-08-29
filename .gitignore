@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/asset/LawMachine.LawCollection.json
+/app/asset/LawMachine.LawSearchContent.json
+/app/asset/LawMachine.LawSearchDescription.json

@@ -31,7 +31,11 @@ width: 100%
 
 .input_area{
   word-break: break-word;
-  field-sizing: content;  }
+  field-sizing: content; 
+  min-height: 20;
+  font-size: 15;
+
+}
 
 
 .btb_container{
@@ -44,7 +48,7 @@ width: 100%
     left: 46%;
     width: 8%;
     flex-direction: column;
-  }
+    }
 
 .btb{
   /* width: 68px; */
@@ -62,14 +66,7 @@ width: 100%
   cursor: pointer;
 }
 
-.copy_btb{
-  background-color:forestgreen;
-}
-.delete_btb{
-  background-color:red;
-}
-
-.delete_btb{
+/* .delete_btb{
   background-color:red;
 }
 
@@ -81,9 +78,9 @@ width: 100%
 .naviNext_btb{
   background-color:rgb(255, 123, 0);
 
-}
+} */
 
-.back_btb{
+/* .back_btb{
   width: 80%;
   height: 250;
   margin-top: 400;
@@ -92,7 +89,7 @@ width: 100%
   color: white;
   cursor: pointer;
   text-decoration: none;
-}
+} */
 
 .PlainText_btb{
   background-color:rgba(255, 0, 251, 0.125);
@@ -108,10 +105,17 @@ width: 100%
   cursor: pointer;
 }
 
-.output{
+.output_container{
   right:-128px;
   position: relative;
   width: 46%;  
+
+}
+
+
+.output{
+  width: 99%;
+  field-sizing: content;
 }
 
   .home_function{
@@ -138,7 +142,7 @@ width: 100%
     justify-content: space-between;
     display: flex;
     flex-direction: column;
-    opacity: .4;
+    /* opacity: .4; */
     bottom: 25px;
     z-index: 100;
   }

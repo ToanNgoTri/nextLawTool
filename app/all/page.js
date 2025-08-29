@@ -3,9 +3,9 @@ import { useState, useRef, useEffect } from "react";
 // import {getValueinArea} from '../../public/asset/'
 import styles from "../page.module.css";
 import ObjectLawPair from "../asset/ObjectLawPair";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams, usePathname } from "next/navigation";
 // export const metadata = {
-//   title: "Once",
+//   title: "All",
 // };
 
 export default function Page() {
@@ -29,34 +29,30 @@ export default function Page() {
   const outputArea = useRef(null);
   const lawRelatedRef = useRef(null);
 
+  // const params = useParams(); // { id: "123" }
+  // console.log('params',params);
+
+  // const id = params['id'];
+
   const searchParams = useSearchParams();
   const url = searchParams.get("URL");
+  const id = searchParams.get("id");
+  const RowAmount = searchParams.get("RowAmount");
+  const PageIndex = searchParams.get("PageIndex");
+  console.log('searchParams',searchParams);
+  
+
+  console.log("url1", url);
 
   useEffect(() => {
-    if (url) {
-      setURL(url);
-    setTimeout(() => {
-      receive()
-    }, 500);
-
-    }
-
+  document.title = "Văn bản số 123"; // đặt title tùy ý
   }, []);
 
-  // useEffect(() => {
-  //   async function callBack() {
-  //     await receive();
-  //   }
-  //   callBack();
-  // }, [url]);
-
   async function receive() {
+    console.log("URL", URL);
+    // console.log('url',url);
 
-    console.log('URL',URL);
-    console.log('url',url);
-    
-
-    fetch(`/api/url?url=${url?url:URL}`).then((res) =>
+    fetch(`/api/url?url=${URL}`).then((res) =>
       res.json().then((res) => {
         // console.log(res.data)
 
@@ -1369,6 +1365,26 @@ export default function Page() {
     });
   }
 
+  function getAllURL() {
+    console.log(url);
+
+    fetch(`/api/allurl?id=${id}&URL=` + encodeURIComponent(url)).then((res) =>
+      res.json().then((res) => {
+        // console.log(res.data)
+
+        setLawNumber(res.data.lawNumber);
+        setUnitPublish(res.data.unitPublish);
+        setLawKind(res.data.lawKind);
+        setNameSign(res.data.nameSign);
+        setLawDaySign(res.data.lawDaySign);
+        setLawDescription(res.data.lawDescription);
+        setLawRelated(res.data.lawRelated);
+        setRoleSign(res.data.roleSign);
+        setContentInput(res.data.content);
+      })
+    );
+  }
+
   function Push() {
     let yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
     let lawNumberForPush =
@@ -1430,6 +1446,61 @@ export default function Page() {
     setURL(clipText);
   }
 
+  // const pathname = usePathname();
+  function NaviNext() {
+    console.log("url", url);
+
+    let URI = url ;
+    // URI = encodeURIComponent(URI)
+    console.log("URI", URI);
+
+    if (!URI.match(/PageIndex=/)) {
+      console.log("có");
+
+      URI = `/all?id=${id}&URL=${encodeURIComponent(url+'&RowAmount=20&PageIndex=1')}`
+    }else{
+     URI = `/all?id=${id}&URL=${encodeURIComponent(url)}`
+
+    }
+    // URI = encodeURIComponent(URI)
+    // console.log('URI',URI);
+
+    // if (URI.match(/(?<=AllURL\/).*(?=\?URL)/g)) {
+    let currentIndex = id;
+    let nextURI;
+
+    console.log("URI", URI);
+
+    if (currentIndex < 19) {
+      // console.log(URI);
+
+      nextURI = URI.replace(
+        new RegExp(`all\\?id=${id}`, "g"),
+        `all?id=${Number(id) + 1}`
+      );
+      // console.log(nextURI);
+
+      // nextURI = URI.replace(/(?<=AllURL\/).*(?=\?URL)/g, `${currentIndex + 1}`);
+    } else {
+      console.log(2);
+
+      let nextPage = parseInt(URI.match(/(?<=\%26PageIndex\%3D).*/gim)[0]) + 1;
+      console.log(nextPage);
+
+      nextURI = URI.replace(/(?<=\%26PageIndex\%3D).*/gim, nextPage);
+      nextURI = nextURI.replace(new RegExp(`all\\?id=19`, "g"), `all?id=0`);
+
+      // nextURI = nextURI.replace(/(?<=AllURL\/).*(?=\?URL)/g, 0);
+    }
+
+    console.log("nextURI", nextURI);
+    window.location.href = nextURI
+
+    // } else {
+    //   console.log('none URI "AllURL"');
+    // }
+  }
+
   return (
     <div id={styles.container}>
       <div style={{ display: "flex", flexDirection: "row" }}>
@@ -1442,13 +1513,25 @@ export default function Page() {
             height: 35,
             backgroundColor: "white",
             color: "black",
-            width: "95%",
+            width: "90%",
             paddingLeft: 5,
           }}
           id={styles.url}
           value={URL}
           onChange={(e) => setURL(e.target.value)}
         ></textarea>
+        <a
+          style={{ width: "10%",textAlign:'center',justifyContent:'center',alignItems:'center',display:'flex',backgroundColor:'blue'
+
+             }}
+          href={`/all?id=0&URL=` + encodeURIComponent(URL)}
+        >
+          Redirect
+        </a>
+
+        {/* <button style={{ width: "5%" }} onClick={() => getAllURL()}>
+          Get All
+        </button> */}
       </div>
       <div id={styles.inner_container}>
         <div id={styles.input_container}>
@@ -1558,8 +1641,8 @@ export default function Page() {
           <button
             type="button"
             className={styles.btb}
-            style={{ backgroundColor: "orange",marginBottom:40 }}
-            onClick={() => receive()}
+            style={{ backgroundColor: "orange", marginBottom: 40 }}
+            onClick={() => getAllURL()}
           >
             Receive
           </button>
@@ -1585,6 +1668,13 @@ export default function Page() {
             onClick={() => Push()}
           >
             Push
+          </button>
+          <button
+            className={styles.btb}
+            style={{ backgroundColor: "green" }}
+            onClick={() => NaviNext()}
+          >
+            Next
           </button>
           {/* <button
             className={styles.btb}
