@@ -1,6 +1,6 @@
 import Image from "next/image";
 import styles from "./page.module.css";
-import Btbcheck from './btbcheck'
+// import Btbcheck from './btbcheck'
 
 export default function Home() {
   return (
@@ -25,7 +25,7 @@ export default function Home() {
 
         {/* <form action="/URL" method="get"> */}
 
-        <Btbcheck/>
+        {/* <Btbcheck/> */}
         {/* </form> */}
         </div>
       </main>

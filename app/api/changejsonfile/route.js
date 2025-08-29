@@ -7,7 +7,7 @@ export async function POST(req) {
     // console.log('body', body);
     
     var data3 = JSON.parse(
-        fs.readFileSync("app/once/asset/ObjectLawPair.json", "utf8")
+        fs.readFileSync("app/asset/ObjectLawPair.json", "utf8")
       );
     
       if (body.lawInfo["lawNameDisplay"].match(/Luật/gim)) {
@@ -25,7 +25,7 @@ export async function POST(req) {
       }
     
       fs.writeFile(
-        "app/once/asset/ObjectLawPair.json",
+        "app/asset/ObjectLawPair.json",
         JSON.stringify(data3),
         function (err, data) {
           if (err) throw err;
