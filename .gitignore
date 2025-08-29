@@ -40,6 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/app/asset/LawMachine.LawCollection.json
-/app/asset/LawMachine.LawSearchContent.json
-/app/asset/LawMachine.LawSearchDescription.json
+app/asset/LawMachine.LawCollection.json
+app/asset/LawMachine.LawSearchContent.json
+app/asset/LawMachine.LawSearchDescription.json

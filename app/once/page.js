@@ -4,9 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import styles from "../page.module.css";
 import ObjectLawPair from "../asset/ObjectLawPair";
 import { useSearchParams } from "next/navigation";
+<<<<<<< HEAD
 // export const metadata = {
 //   title: "Once",
 // };
+=======
+>>>>>>> 336b056df908875133ce2bb47cbb9feebac7e0d7
 
 export default function Page() {
   const [URL, setURL] = useState("");
