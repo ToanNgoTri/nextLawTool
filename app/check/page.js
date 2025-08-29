@@ -1,12 +1,7 @@
 "use client";
 import { useState } from "react";
 import styles from "../page.module.css";
-<<<<<<< HEAD
-// export const metadata = {
-//   title: "Check",
-// };
-=======
->>>>>>> 336b056df908875133ce2bb47cbb9feebac7e0d7
+
 
 function Page() {
   const [URL, setURL] = useState("");
