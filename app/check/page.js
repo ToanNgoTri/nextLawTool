@@ -6,7 +6,7 @@ import styles from "../page.module.css";
 function Page() {
   const [URL, setURL] = useState("");
   const [data, setData] = useState({});
-  console.log("data", data);
+  // console.log("data", data);
 
   async function check() {
     // console.log(URL);
@@ -15,7 +15,7 @@ function Page() {
       .then((res) => res.json())
       .then((res) => {
         setData(res.content);
-        console.log("res.data", res.content);
+        // console.log("res.data", res.content);
       });
   }
 

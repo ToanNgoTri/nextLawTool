@@ -49,8 +49,8 @@ export default function Page() {
 
   async function receive() {
 
-    console.log('URL',URL);
-    console.log('url',url);
+    // console.log('URL',URL);
+    // console.log('url',url);
     
 
     fetch(`/api/url?url=${url?url:URL}`).then((res) =>
@@ -816,16 +816,30 @@ export default function Page() {
 
     lawDaySign = addDaysToDate(lawDaySign, 0);
 
-    lawInfo["lawDescription"] = lawDescription;
-    lawInfo["lawNumber"] = lawNumber;
-    lawInfo["unitPublish"] = unitPublish;
-    lawInfo["lawKind"] = lawKind;
-    lawInfo["lawDaySign"] = lawDaySign;
-    lawInfo["lawDayActive"] = lawDayActive;
-    lawInfo["lawNameDisplay"] = lawNameDisplay;
-    lawInfo["lawRelated"] = lawRelated;
-    lawInfo["nameSign"] = nameSign;
-    lawInfo["roleSign"] = roleSign;
+
+        setLawInfoPush({
+      unitPublish,
+      lawDaySign,
+      nameSign,
+      roleSign,
+      lawDayActive,
+      lawDescription,
+      lawNumber,
+      lawRelated,
+      lawKind,
+      lawNameDisplay,
+    });
+
+      lawInfo["lawDescription"] = lawDescription;
+      lawInfo["lawNumber"] = lawNumber;
+      lawInfo["unitPublish"] = unitPublish;
+      lawInfo["lawKind"] = lawKind;
+      lawInfo["lawDaySign"] = lawDaySign;
+      lawInfo["lawDayActive"] = lawDayActive;
+      lawInfo["lawNameDisplay"] = lawNameDisplay;
+      lawInfo["lawRelated"] = lawRelated;
+      lawInfo["nameSign"] = nameSign;
+      lawInfo["roleSign"] = roleSign;
 
     console.log("lawDescription", lawInfo["lawDescription"]);
     console.log("lawNumber", lawInfo["lawNumber"]);
@@ -1362,11 +1376,13 @@ export default function Page() {
       }),
     }).then((res) => {
       res.text();
-      console.log("Push success!");
+      console.log("changejsonfile success!");
     });
   }
 
   function Push() {
+    // console.log('lawInfoPush["lawDaySign"]',lawInfoPush);
+    
     let yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
     let lawNumberForPush =
       lawInfoPush["lawNumber"] +
