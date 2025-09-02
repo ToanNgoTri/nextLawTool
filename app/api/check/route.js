@@ -59,7 +59,11 @@ export async function GET(request) {
   );
 
   for (let a = 0; a < Object.keys(ObjectLaw["content"]).length; a++) {
-    if (!lawPairObject[Object.keys(ObjectLaw["content"])[a].toLowerCase()] && (!Object.values(ObjectLaw["content"])[a].match(/nghi\-quyet/img) ||  Object.values(ObjectLaw["content"])[a].match(/hdtp/img) )) {
+    if (
+      !lawPairObject[Object.keys(ObjectLaw["content"])[a].toLowerCase()] &&
+      (!Object.values(ObjectLaw["content"])[a].match(/nghi\-quyet/gim) ||
+        Object.values(ObjectLaw["content"])[a].match(/hdtp/gim))
+    ) {
       content[Object.keys(ObjectLaw["content"])[a]] =
         ObjectLaw["content"][Object.keys(ObjectLaw["content"])[a]];
     }
