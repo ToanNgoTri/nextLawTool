@@ -1,10 +1,17 @@
 import Image from "next/image";
 import styles from "./page.module.css";
+import data from "../app/asset/population.json"; 
+
 
 export const metadata = {
   title: "NextJS Law Tool",
 };
 export default function Home() {
+
+
+
+
+
   return (
     <div style={{width:'100%', display:'flex', justifyContent:'space-around',marginTop:40}}>
 
