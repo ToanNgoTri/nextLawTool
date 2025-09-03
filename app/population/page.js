@@ -23,12 +23,12 @@ function Page() {
             // const [day2, month2, year2] = item["NAMSINH"].split("/");
             // const dateA = new Date(year2, month2 - 1, day2);
 
-            if (item["HOTEN"] == item["TENCH"]) {
+            if (item["QUANHE"] == "CH") {
               item["QUANHE"] = "CH";
               break;
             } else if (
               item["SOHOK"] == data[b]["SOHOK"] &&
-              (item["QUANHE"] == "VỢ" || item["QUANHE"] == "CHỒNG") &&
+              (data[b]["QUANHE"] == "VỢ" || data[b]["QUANHE"] == "CHỒNG") &&
               (item["TENCHA"] == item["TENCH"] ||
                 item["TENME"] == item["TENCH"] ||
                 item["TENME"] == data[b]["HOTEN"] ||
@@ -92,7 +92,7 @@ function Page() {
                 item["NAMSINH"].split("/")[2],
                 item["NAMSINH"].split("/")[1] - 1,
                 item["NAMSINH"].split("/")[0]
-              ) >
+              ) <
                 new Date(
                   data[b]["NAMSINH"].split("/")[2],
                   data[b]["NAMSINH"].split("/")[1] - 1,
@@ -111,7 +111,7 @@ function Page() {
                 item["NAMSINH"].split("/")[2],
                 item["NAMSINH"].split("/")[1] - 1,
                 item["NAMSINH"].split("/")[0]
-              ) >
+              ) <
                 new Date(
                   data[b]["NAMSINH"].split("/")[2],
                   data[b]["NAMSINH"].split("/")[1] - 1,
@@ -128,7 +128,7 @@ function Page() {
                 item["NAMSINH"].split("/")[2],
                 item["NAMSINH"].split("/")[1] - 1,
                 item["NAMSINH"].split("/")[0]
-              ) <
+              ) >
                 new Date(
                   data[b]["NAMSINH"].split("/")[2],
                   data[b]["NAMSINH"].split("/")[1] - 1,
