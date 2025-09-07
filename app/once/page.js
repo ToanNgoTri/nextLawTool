@@ -531,13 +531,6 @@ export default function Page() {
     });
 
     let lawPairObject = ObjectLawPair;
-    // await fetch("once/asset/ObjectLawPair.json")
-    //   .then((response) => response.json()) // Chuyển đổi response thành JSON
-    //   .then((data) => {
-    //     lawPairObject = data;
-    //   })
-    //   .catch((error) => console.log("Error:", error));
-
     for (let a = 0; a < Object.keys(lawRelatedObject).length; a++) {
       if (
         lawPairObject[

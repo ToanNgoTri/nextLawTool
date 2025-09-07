@@ -27,6 +27,8 @@ export async function GET(request) {
           let yearSign = item.innerText.match(/20(1|2)\d/)[0];
 
           lawTitelForCheck = LawNumber + "(" + yearSign + ")";
+                    console.log('lawTitelForCheck',lawTitelForCheck);
+
         } else if (
           item.innerText.match(
             /(\d+\/?\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
@@ -34,8 +36,12 @@ export async function GET(request) {
         ) {
           lawTitelForCheck = item.innerText.match(
             /(\d+\/?\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
-          );
+          )[0];
+          console.log('lawTitelForCheck2',lawTitelForCheck);
+          
         } else {
+         console.log('lawTitelForCheck3',lawTitelForCheck);
+
         }
         content[lawTitelForCheck] = item.href;
         // }
@@ -51,12 +57,15 @@ export async function GET(request) {
   }
 
   let ObjectLaw = await checkNonExistLaw(url);
+  // console.log('ObjectLaw',ObjectLaw);
+  
 
   let content = {};
 
   let lawPairObject = await JSON.parse(
     fs.readFileSync("app/asset/ObjectLawPair.json", "utf8")
   );
+  
 
   for (let a = 0; a < Object.keys(ObjectLaw["content"]).length; a++) {
     if (

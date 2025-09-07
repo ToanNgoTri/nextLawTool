@@ -1,15 +1,31 @@
+"use client"
 import Image from "next/image";
 import styles from "./page.module.css";
-import data from "../app/asset/population.json"; 
+// import lawObject from "./asset/LawMachine.LawCollection.json";
+import lawID1 from "./asset/allLawID.json";
+import lawID2 from "./asset/allLawID copy.json";
 
 
-export const metadata = {
-  title: "NextJS Law Tool",
-};
 export default function Home() {
 
 
+async function compareLaw() {
+  let missingLaw = [];
 
+  missingLaw = lawID2.filter((item) => !lawID1.includes(item));
+
+  console.log(missingLaw);
+}
+
+
+// let allLawSearchId = [];
+// async function getAllLawId() {
+//       for (let a = 0; a < lawObject.length; a++) {
+//         allLawSearchId[a] = lawObject[a]["_id"];
+//       }
+
+//   console.log(allLawSearchId);
+// }
 
 
   return (
@@ -52,6 +68,26 @@ export default function Home() {
 >
           check
         </a>
+        <a
+          href="/api/getlawid"
+          target="_blank"
+          rel="noopener noreferrer"
+                  style={{
+            padding:10,
+            backgroundColor:'gray',
+
+          }}
+>
+          getlawID
+        </a>
+        {/* <button
+        onClick={()=>getAllLawId()}>
+          getAllLawId
+        </button> */}
+        <button
+        onClick={()=>compareLaw()}>
+          compareLaw
+        </button>
     </div>
   );
 }
