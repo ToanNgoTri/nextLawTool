@@ -12,7 +12,7 @@ export default function Home() {
 async function compareLaw() {
   let missingLaw = [];
 
-  missingLaw = lawID2.filter((item) => !lawID1.includes(item));
+  missingLaw = lawID1.filter((item) => !lawID2.includes(item));
 
   console.log(missingLaw);
 }
