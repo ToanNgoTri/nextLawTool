@@ -776,6 +776,7 @@ export default function Page() {
 
     let b16 = b15.replace(/\n$/gim, ""); // bỏ hàng dư trống ở cuối
     let b17 = b16.replace(/\n*VĂN PHÒNG QUỐC HỘI(\n.*)*/gim, ""); // bỏ hàng dư trống ở cuối
+    b17 = b17.replace(/\n*XÁC THỰC VĂN BẢN HỢP NHẤT(\n.*)*/gim, "");
 
     return b17;
   }

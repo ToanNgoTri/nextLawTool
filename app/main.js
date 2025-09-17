@@ -482,11 +482,11 @@ function beep() {
             ];
         }
       } else if (Object.keys(lawRelatedObject)[a].match(/Hiến pháp/gim)) {
-        console.log("dayActive", dayActive);
+        // console.log("dayActive", dayActive);
   
         const date = new Date(dayActive);
   
-        console.log("date", date);
+        // console.log("date", date);
         if (date > new Date("2025-06-16")) {
           lawRelatedObject[Object.keys(lawRelatedObject)[a]] = "52/VBHN-VPQH(2025)";
         } else if (date > new Date("2014-01-01")) {
@@ -672,8 +672,10 @@ function beep() {
     }
   
     let b16 = b15.replace(/\n$/gim, ""); // bỏ hàng dư trống ở cuối
-    let b17 = b16.replace(/\n*VĂN PHÒNG QUỐC HỘI(\n.*)*/gim, ""); // bỏ hàng dư trống ở cuối
-  
+    let b17 = b16.replace(/\n*VĂN PHÒNG QUỐC HỘI(\n.*)*/gim, ""); 
+    
+    b17 = b17.replace(/\n*XÁC THỰC VĂN BẢN HỢP NHẤT(\n.*)*/gim, "");
+
     return b17;
   }
   
@@ -685,6 +687,7 @@ function beep() {
     let partOne = convertPartOne();
   
     let partTwo = convertPartTwo(partOne);
+    
   
     // document.querySelector(".output").value = b9;
   
