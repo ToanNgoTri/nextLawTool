@@ -136,20 +136,6 @@ function Page() {
                 )            ) {
               item["QUANHE"] = "EM";
               break;
-            } else if (
-                            item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CHÁU" &&
-              data[b]["TENME"] == item["HOTEN"] 
-               ) {
-              item["QUANHE"] = "DÂU";
-              break;
-            } else if (
-                            item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CHÁU" &&
-              data[b]["TENCHA"] == item["HOTEN"] 
-               ) {
-              item["QUANHE"] = "RỂ";
-              break;
             } 
           }
 
