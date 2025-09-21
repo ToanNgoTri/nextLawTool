@@ -54,7 +54,7 @@ function Page() {
             } else if (
               item["SOHOK"] == data[b]["SOHOK"] &&
               data[b]["QUANHE"] == "CON" &&
-              item["HOTEN"] == data[b]["TENME"]
+              item["HOTEN"] == data[b]["TENCHA"]
             ) {
               item["QUANHE"] = "CHỒNG";
               break;
@@ -135,6 +135,20 @@ function Page() {
                   data[b]["NAMSINH"].split("/")[0]
                 )            ) {
               item["QUANHE"] = "EM";
+              break;
+            } else if (
+                            item["SOHOK"] == data[b]["SOHOK"] &&
+              data[b]["QUANHE"] == "CHÁU" &&
+              data[b]["TENME"] == item["HOTEN"] 
+               ) {
+              item["QUANHE"] = "DÂU";
+              break;
+            } else if (
+                            item["SOHOK"] == data[b]["SOHOK"] &&
+              data[b]["QUANHE"] == "CHÁU" &&
+              data[b]["TENCHA"] == item["HOTEN"] 
+               ) {
+              item["QUANHE"] = "RỂ";
               break;
             } 
           }
