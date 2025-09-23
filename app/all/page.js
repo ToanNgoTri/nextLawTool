@@ -39,10 +39,10 @@ export default function Page() {
   const id = searchParams.get("id");
   const RowAmount = searchParams.get("RowAmount");
   const PageIndex = searchParams.get("PageIndex");
-  console.log('searchParams',searchParams);
+  // console.log('searchParams',searchParams);
   
 
-  console.log("url1", url);
+  // console.log("url1", url);
 
   useEffect(() => {
   document.title = "Văn bản số 123"; // đặt title tùy ý
@@ -1369,7 +1369,7 @@ export default function Page() {
   function getAllURL() {
     console.log(url);
 
-    fetch(`/api/allurl?id=${id}&URL=` + encodeURIComponent(url)).then((res) =>
+    fetch(`/api/AllURL?id=${id}&URL=` + encodeURIComponent(url)).then((res) =>
       res.json().then((res) => {
         // console.log(res.data)
 

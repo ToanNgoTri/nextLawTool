@@ -206,10 +206,12 @@ async function eachRun(url) {
 
   let arrayLink = await allRun(url);
   console.log('arrayLink',arrayLink);
-  
+  console.log('arrayLink',arrayLink);
+
   let data = "";
   data = await eachRun(arrayLink[id]);
-
+  console.log('data',data);
+  
     return NextResponse.json({ data });        
 
 }

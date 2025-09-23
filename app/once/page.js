@@ -1404,7 +1404,6 @@ export default function Page() {
   function goToStartInput() {
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
     });
     // lawRelatedRef.current?.scrollIntoView({ behavior: "smooth" });
   }
@@ -1417,19 +1416,17 @@ export default function Page() {
 
     window.scrollTo({
       top: document.body.scrollHeight,
-      behavior: "smooth",
     });
   }
 
   function goToStartOutput() {
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
     });
   }
 
   function goToEndOutput() {
-    window.scrollTo({ top: outputArea.current.scrollHeight - 300 });
+    window.scrollTo({ top: outputArea.current.scrollHeight - 100 });
   }
 
   async function copyContent() {
