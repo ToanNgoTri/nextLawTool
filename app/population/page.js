@@ -54,7 +54,7 @@ function Page() {
             } else if (
               item["SOHOK"] == data[b]["SOHOK"] &&
               data[b]["QUANHE"] == "CON" &&
-              item["HOTEN"] == data[b]["TENME"]
+              item["HOTEN"] == data[b]["TENCHA"]
             ) {
               item["QUANHE"] = "CHỒNG";
               break;
