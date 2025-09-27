@@ -57,7 +57,8 @@ export async function POST(req) {
         }
       }
 
-
+      // console.log('body.dataLaw',body.dataLaw);
+      
 
       pushLawContent(body.lawInfo, body.dataLaw, body.lawNumber);
       pushLawSearch(body.lawInfo, body.lawNumber, body.contentText);
