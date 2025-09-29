@@ -1158,7 +1158,7 @@ export default function Page() {
           let re = new RegExp(replace, "gim");
           articleArray = i10.match(re);
         }
-
+          
         if (articleArray[0].match(/^(Điều|Điều) \d+(.*)$/gim)) {
           data[a] = { [chapterArray[a]]: [] };
           allArticle.push(articleArray[0].match(/^(Điều|Điều) \d+(.*)$/gim));
@@ -2275,7 +2275,7 @@ setContentOutput('')
           <button
             className={styles.btb}
             style={{ backgroundColor: "red" }}
-            onClick={() => Push()}
+            onClick={() => textForMachine?Push():alert('Chưa chuyển đổi nội dung') }
           >
             Push
           </button>
