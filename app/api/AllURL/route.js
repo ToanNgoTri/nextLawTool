@@ -7,10 +7,6 @@ export async function GET(request) {
   const id = searchParams.get("id");
 
 
-    console.log('url',url);
-    console.log('id',id);
-    
-
 async function eachRun(url) {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
@@ -30,7 +26,6 @@ async function eachRun(url) {
       ".noidungtracuu >.docitem-1:not(.docitem-9 ~ div), .docitem-2:not(.docitem-9 ~ div), .docitem-5:not(.docitem-9 ~ div), .docitem-11:not(.docitem-9 ~ div), .docitem-12:not(.docitem-9 ~ div)"
       // ".noidungtracuu .docitem-5"
     );
-    console.log("elementContent", elementContent);
 
     let lawRelated = "";
     let roleSign = "";
@@ -60,7 +55,6 @@ async function eachRun(url) {
       roleSign = roleSign.replace(/\n+/g, "\n");
     }
 
-    console.log(elementContent[1]);
 
     var content = "";
     for (let a = 0; a < elementContent.length; a++) {
@@ -192,7 +186,6 @@ async function eachRun(url) {
       elements.forEach((link) => {
         a.push(link.querySelector("a").href); // In ra giá trị href của mỗi thẻ <a>
       });
-      console.log("elements", elements);
 
       return a;
     });
@@ -205,12 +198,9 @@ async function eachRun(url) {
   }
 
   let arrayLink = await allRun(url);
-  console.log('arrayLink',arrayLink);
-  console.log('arrayLink',arrayLink);
 
   let data = "";
   data = await eachRun(arrayLink[id]);
-  console.log('data',data);
   
     return NextResponse.json({ data });        
 

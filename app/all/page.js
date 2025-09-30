@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 // import {getValueinArea} from '../../public/asset/'
 import styles from "../page.module.css";
 import ObjectLawPair from "../asset/ObjectLawPair";
@@ -46,39 +46,12 @@ export default function Page() {
 
   useEffect(() => {
   document.title = "Văn bản số 123"; // đặt title tùy ý
-  }, []);
 
-  async function receive() {
-    console.log("URL", URL);
-    // console.log('url',url);
-
-    fetch(`/api/url?url=${URL}`).then((res) =>
-      res.json().then((res) => {
-        // console.log(res.data)
-
-        setLawNumber(res.data.lawNumber);
-        setUnitPublish(res.data.unitPublish);
-        setLawKind(res.data.lawKind);
-        setNameSign(res.data.nameSign);
-        setLawDaySign(res.data.lawDaySign);
-        setLawDescription(res.data.lawDescription);
-        setLawRelated(res.data.lawRelated);
-        setRoleSign(res.data.roleSign);
-        setContentInput(res.data.content);
-      })
-    );
-
-    setLawNumber;
-    setUnitPublish;
-    setLawKind;
-    setNameSign;
-    setLawDaySign;
-    setLawDescription;
-    setRoleSign;
-    setContentInput;
-    setLawRelated;
-    setContentOutput;
+  if(url){
+    getAllURL() 
   }
+  }, [url]);
+
 
   function beep() {
     const audioContext = new (window.AudioContext ||
@@ -263,7 +236,7 @@ export default function Page() {
       lawDayActive = text.match(
         /(?<=(LUẬT|BỘ LUẬT|NGHỊ ĐỊNH|Nghị định|THÔNG TƯ|NGHỊ QUYẾT|THÔNG TƯ LIÊN TỊCH|QUYẾT ĐỊNH|PHÁP LỆNH|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|HIẾN PHÁP)(\s(này|này))?.*(có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực)[^;]+)sau \d* ngày/im
       )[0];
-      countDaysAfter = lawDayActive.match(/\d+/gim)[0];
+      let countDaysAfter = lawDayActive.match(/\d+/gim)[0];
       lawDayActive = addDaysToDate(daySign, parseInt(countDaysAfter));
       console.log(3);
     } else if (
@@ -530,13 +503,6 @@ export default function Page() {
     });
 
     let lawPairObject = ObjectLawPair;
-    // await fetch("once/asset/ObjectLawPair.json")
-    //   .then((response) => response.json()) // Chuyển đổi response thành JSON
-    //   .then((data) => {
-    //     lawPairObject = data;
-    //   })
-    //   .catch((error) => console.log("Error:", error));
-
     for (let a = 0; a < Object.keys(lawRelatedObject).length; a++) {
       if (
         lawPairObject[
@@ -568,11 +534,11 @@ export default function Page() {
             ];
         }
       } else if (Object.keys(lawRelatedObject)[a].match(/Hiến pháp/gim)) {
-        console.log("dayActive", dayActive);
+        // console.log("dayActive", dayActive);
 
         const date = new Date(dayActive);
 
-        console.log("date", date);
+        // console.log("date", date);
         if (date > new Date("2025-06-16")) {
           lawRelatedObject[Object.keys(lawRelatedObject)[a]] =
             "52/VBHN-VPQH(2025)";
@@ -781,14 +747,120 @@ export default function Page() {
     return b17;
   }
 
+  function convertPartOneOfficialDispatch() {
+    console.log("convertPartOneOfficialDispatch");  
+    let b = contentInputText;
+    let b1 = b.replace(/^ */gim, ""); // bỏ các space ở đầu mỗi dòng
+    let b2 = b1.replace(/\(*đã k(ý|í)\)*/gim, "");
+    b2 = b2.replace(/\[daky\]/gim, "");
+    let b3 = b2.replace(/^\s*nơi nhận.*\n([^\s].*\n)*/gim, "");
+    let b4 = b3.replace(/\n+\s+$/gim, "");
+    let b5 = b4.replace(/\n*$/gim, ""); //bỏ xuống dòng ở cuối
+    let b6 = b5.replace(/^\s*/gim, ""); // bỏ space, xuống dòng ở đầu
+    let b7 = b6.replace(/\s*$/gim, ""); // bỏ space, xuống dòng ở cuối
+    let b8 = b7.replace(/(?<=\w)\n\[\d+\].*$(\n.*)*$/gim, ""); // bỏ mấy cái chỉ mục của VBHN đi
+    let b9 = b8.replace(/\n+/gim, "\n"); // biến nhiều xuống dòng thành 1 xuống dòng
+
+    let b10 = b9;
+
+    let b11 = b10.replace(/\[\d*\]/gim, ""); // bỏ chỉ mục số đi
+    // console.log("b12",b4);
+    
+    let b12 = b11.replace(/(.*\n)*Kính gửi.*\n/gim, "");
+    // b12 = b12.replace(/^(\d+\w?)./gim, "$1.");
+    let b13 = b12.replace(/  +/gim, " "); // bỏ khoảng cách 2 space
+    // console.log("b13", b13);
+    return b13;
+  }
+
+  function convertPartTwoOfficialDispatch(partOne) {
+    let b14 = partOne;
+    let b15 = b14;
+    if (b14.match(/(?<=.*\.\/\.)(\n.*)*/gim)) {
+      b15 = b14.replace(/(?<=.*\.\/\.)(\n.*)*/gim, ""); //  bỏ tất cả sau ./.
+    }
+
+    if (b14.match(/^TM\s?\./m)) {
+      b15 = b15.replace(/^TM\s?.*(\n.*)*/m, "");
+    } else if (b15.match(/^KT\s?\./m)) {
+      b15 = b15.replace(/^KT\s?.*(\n.*)*/m, "");
+    }else if (b15.match(/^TL\s?\./m)) {
+      b15 = b15.replace(/^TL\s?.*(\n.*)*/m, "");
+    } else if (b15.match(new RegExp(nameSign[0]), "img")) {
+      for (let k = 0; k < nameSign.length; k++) {
+        if (
+          b15.match(
+            new RegExp(
+              `\n.*\n(Thiếu|trung|thượng|đại) ?(Tá|Tướng) ?${nameSign[k]}(\n(.*\n.*)*)*`,
+              "img"
+            )
+          ) &&
+          b15
+            .match(
+              new RegExp(
+                `\n.*\n(Thiếu|trung|thượng|đại) ?(Tá|Tướng) ?${nameSign[k]}(\n(.*\n.*)*)*`,
+                "img"
+              )
+            )[0]
+            .match(/(THỨ|PHÓ)/gim) &&
+          !b15
+            .match(
+              new RegExp(
+                `\n.*\n(Thiếu|trung|thượng|đại) ?(Tá|Tướng) ?${nameSign[k]}(\n(.*\n.*)*)*`,
+                "img"
+              )
+            )[0]
+            .match(/(THỨ|PHÓ)/gim).length
+        ) {
+          b15 = b15.replace(
+            new RegExp(
+              `\n.*\n(Thiếu|trung|thượng|đại) ?(Tá|Tướng) ?${nameSign[k]}(\n(.*\n.*)*)*`,
+              "img"
+            ),
+            ""
+          ); // tất cả hàng cuối
+        } else if (
+          b15.match(new RegExp(`\n.*\n${nameSign[k]}(\n(.*\n.*)*)*`, "img"))[0]
+        ) {
+          b15 = b15.replace(
+            new RegExp(`\n.*\n${nameSign[k]}(\n(.*\n.*)*)*`, "img"),
+            ""
+          );
+        } else {
+          b15 = b15.replace(
+            new RegExp(
+              `\n.*\n.*\n(Thiếu|trung|thượng|đại) ?(Tá|Tướng) ?${nameSign[k]}(\n(.*\n.*)*)*`,
+              "img"
+            ),
+            ""
+          ); // tất cả hàng cuối
+        }
+      }
+    }
+
+    let b16 = b15.replace(/\n$/gim, ""); // bỏ hàng dư trống ở cuối
+    let b17 = b16.replace(/\n*VĂN PHÒNG QUỐC HỘI(\n.*)*/gim, ""); // bỏ hàng dư trống ở cuối
+    b17 = b17.replace(/\n*XÁC THỰC VĂN BẢN HỢP NHẤT(\n.*)*/gim, "");
+  // console.log("b17", b17);
+
+    return b17;
+  }
+
   async function convertBareTextInfo() {
     console.log("convertBareTextInfo");
 
     nameSign = nameSignArrayDemo;
+    let partOne, partTwo;
+    if(lawNumber.match(/^\d+\/(TAND|VKS).+\-/img)){
+      partOne = convertPartOneOfficialDispatch();
 
-    let partOne = convertPartOne();
+      partTwo = convertPartTwoOfficialDispatch(partOne);
+    }else{
+      partOne = convertPartOne();
 
-    let partTwo = convertPartTwo(partOne);
+      partTwo = convertPartTwo(partOne);
+  
+    }
 
     nameSign = nameSignArrayDemo;
     roleSign = getRoleSign(partOne, nameSign);
@@ -816,16 +888,30 @@ export default function Page() {
 
     lawDaySign = addDaysToDate(lawDaySign, 0);
 
-    lawInfo["lawDescription"] = lawDescription;
-    lawInfo["lawNumber"] = lawNumber;
-    lawInfo["unitPublish"] = unitPublish;
-    lawInfo["lawKind"] = lawKind;
-    lawInfo["lawDaySign"] = lawDaySign;
-    lawInfo["lawDayActive"] = lawDayActive;
-    lawInfo["lawNameDisplay"] = lawNameDisplay;
-    lawInfo["lawRelated"] = lawRelated;
-    lawInfo["nameSign"] = nameSign;
-    lawInfo["roleSign"] = roleSign;
+
+        setLawInfoPush({
+      unitPublish,
+      lawDaySign,
+      nameSign,
+      roleSign,
+      lawDayActive,
+      lawDescription,
+      lawNumber,
+      lawRelated,
+      lawKind,
+      lawNameDisplay,
+    });
+
+      lawInfo["lawDescription"] = lawDescription;
+      lawInfo["lawNumber"] = lawNumber;
+      lawInfo["unitPublish"] = unitPublish;
+      lawInfo["lawKind"] = lawKind;
+      lawInfo["lawDaySign"] = lawDaySign;
+      lawInfo["lawDayActive"] = lawDayActive;
+      lawInfo["lawNameDisplay"] = lawNameDisplay;
+      lawInfo["lawRelated"] = lawRelated;
+      lawInfo["nameSign"] = nameSign;
+      lawInfo["roleSign"] = roleSign;
 
     console.log("lawDescription", lawInfo["lawDescription"]);
     console.log("lawNumber", lawInfo["lawNumber"]);
@@ -1043,7 +1129,7 @@ export default function Page() {
           let re = new RegExp(replace, "gim");
           articleArray = i10.match(re);
         }
-
+          
         if (articleArray[0].match(/^(Điều|Điều) \d+(.*)$/gim)) {
           data[a] = { [chapterArray[a]]: [] };
           allArticle.push(articleArray[0].match(/^(Điều|Điều) \d+(.*)$/gim));
@@ -1345,6 +1431,576 @@ export default function Page() {
     return data;
   }
 
+  async function  convertContentOfficialDispatch() {
+  console.log("convertContentOfficialDispatch");
+
+    data = [];
+
+    let input = contentOutputText;
+
+    let i1 = input.replace(
+      /^Câu( |\u00A0)+(\d+\w?)\.(.*)/gim,
+      "Câu $2:$3"
+    );
+
+
+    let i2 = i1.replace(/­/gm, "");
+
+    // let i3 = i2 //.replace(/(?<=^Chương (V|I|X|\d)*)\./gim, "");
+
+    // let i4;
+
+    // let i4a = [];
+    // let initial = 4; // số dòng tối đa mặc định có thể bị xuống dòng làm cho phần 'chương' không được gộp
+    // thành 1 dòng (có thể thay đổi để phù hợp tình hình)
+
+    // for (let b = 0; b < initial; b++) {
+    //   if (!b) {
+    //     i4a[b] = i3.replace(/(?<=^Mục .*)\n(?!(Điều|Ðiều|Điều) \d.*)/gim, ": ");
+    //   } else {
+    //     i4a[b] = i4a[b - 1].replace(
+    //       /(?<=^Mục .*)\n(?!(Điều|Ðiều|Điều) \d.*)/gim,
+    //       " "
+    //     );
+
+    //     // kết nối "mục với nội dung "mục", trường hợp bị tách 2 hàng
+    //   }
+    // }
+
+    // i4 = i4a[initial - 1];
+
+    // let i5 = i4 //.replace(/^(Mục|Mục)(.*)\n/gim, ""); // bỏ mục đi
+
+    let i3 = i2.replace(/\[\d*\]/gim, ""); // bỏ chỉ mục
+
+    let i4 = i3.replace(/\u00A0/gim, " ");
+
+    // let i8;
+    // let i8a = []; // kết nối "Phần thứ với nội dung "phần thứ ...", trường hợp bị tách 2 hàng
+
+    // for (let c = 0; c < 5; c++) {
+    //   if (!c) {
+    //     i8a[c] = i7.replace(
+    //       /(?<=^(Phần|PHẦN)\s(THỨ|I|l|1).*)\n(?!(((Điều|Ðiều|Điều) \d.*)|(chương (V|I|X|\d).*$.*)))/gim,
+    //       ": "
+    //     );
+    //   } else {
+    //     i8a[c] = i8a[c - 1].replace(
+    //       /(?<=^(Phần|PHẦN)\s(THỨ|I|l|1).*)\n(?!(((Điều|Ðiều|Điều) \d.*)|(chương (V|I|X|\d).*$.*)))/gim,
+    //       " "
+    //     );
+    //   }
+    // }
+    // i8 = i8a[4];
+
+    // let i9 = i8.replace(/(?<=^(Phần|PHẦN)\s(THỨ|I|l|\d)+[^\.]*)\./im, ""); // bỏ dấu chấm cuối chữ phần thứ ...
+
+    // let i10;
+    // let i10a = []; // kết nối "chương với nội dung "chương ...", trường hợp bị tách 2 hàng
+
+    // for (let c = 0; c < initial; c++) {
+    //   if (!c) {
+    //     i10a[c] = i9.replace(
+    //       /(?<=^Chương (V|I|X|\d).*)\n(?!(Điều|Ðiều|Điều) \d.*)/gim,
+    //       ": "
+    //     );
+    //   } else {
+    //     i10a[c] = i10a[c - 1].replace(
+    //       /(?<=^Chương (V|I|X|\d).*)\n(?!(Điều|Ðiều|Điều) \d.*)/gim,
+    //       " "
+    //     );
+    //   }
+    // }
+
+    // i10 = i10a[initial - 1];
+    // i10 = i10.replace(/(?<=^Chương (V|I|X|\d)*) /gim, ": ");
+
+    contentText = i4;
+    setFullText(i4);
+    setContentOutput(i4);
+    // console.log(i4);
+    
+
+    if (i4.match(/(như sau|sau đây|lưu ý):\n(V|I|X)\./gm)) {
+      // nếu có chương ...
+      console.log("nếu có chương ...");
+
+      
+      let chapterArray; // lấy riêng lẻ từng chương thành 1 array
+      if (i4.match(/^(V|I|X)*\./gm)) {
+        chapterArray = i4.match(/^(V|I|X)*\..*/gm);
+      } else {
+        chapterArray = null;
+      }
+
+      let chapterArray0 = chapterArray[0].replace(/\\/gim, "\\\\");
+      chapterArray0 = chapterArray0.replace(/\(/gim, "\\(");
+      chapterArray0 = chapterArray0.replace(/\)/gim, "\\)");
+      chapterArray0 = chapterArray0.replace(/\./gim, "\\.");
+      chapterArray0 = chapterArray0.replace(/\?/gim, "\\?");
+      let firstOpenClause = i4.match(new RegExp(`(.*\n)*.*\n*(?=\n${chapterArray0})`,"img"))
+    // console.log('firstOpenClause',firstOpenClause);
+
+
+      let articleArray; // lấy khoảng giữa các chương
+      let allArticle = []; // lấy riêng lẻ các điều
+      let point = [];
+      let d = -1;
+
+      for (var a = 0; a < chapterArray.length; a++) {
+        articleArray = [];
+
+        if (a < chapterArray.length - 1) {
+          let chapterArrayA = chapterArray[a].replace(/\\/gim, "\\\\");
+          chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
+          chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
+          chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
+
+          let chapterArrayB = chapterArray[a + 1].replace(/\\/gim, "\\\\");
+          chapterArrayB = chapterArrayB.replace(/\(/gim, "\\(");
+          chapterArrayB = chapterArrayB.replace(/\)/gim, "\\)");
+          chapterArrayB = chapterArrayB.replace(/\?/gim, "\\?");
+
+          let replace = `(?<=${chapterArrayA}\n)(.*\n)*(?=${chapterArrayB})`;
+          let re = new RegExp(replace, "gim");
+          articleArray = i4.match(re);
+        } else {
+          let chapterArrayA = chapterArray[a].replace(/\\/gim, "\\\\");
+          chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
+          chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
+          chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
+          // console.log('chapterArrayA',chapterArrayA);
+          // console.log('i4',i4);
+          
+          let replace = `((?<=${chapterArrayA}))((\n.*)*)$`;
+          let re = new RegExp(replace, "gim");
+          articleArray = i4.match(re);
+        }
+        // console.log('articleArray',articleArray);
+        // console.log('chapterArray',chapterArray);
+
+        
+        data[a] = { [chapterArray[a]]: [] };
+        if (articleArray[0].match(/^Câu \d+\:(.*)$/gim) || articleArray[0].match(/^Câu \d+\:(.*)$/gim) || articleArray[0].match(/^\d+(\.\d+)*\.(.*)$/gim)) {
+
+          // let articleArray = i4.match(/^Câu \d+\:(.*)$/gim)?i4.match(/^Câu \d+\:(.*)$/gim):i4.match(/^\d+\.(.*)$/gim)
+          // console.log(articleArray);
+          // let articleArray0 = articleArray[0].replace(/\\/gim, "\\\\");
+          // articleArray0 = articleArray0.replace(/\(/gim, "\\(");
+          // articleArray0 = articleArray0.replace(/\)/gim, "\\)");
+          // articleArray0 = articleArray0.replace(/\./gim, "\\.");
+    
+          // let firstOpenClause = i4.match(new RegExp(`(.*\n)*.*\n*(?=\n${articleArray0})`,"img"))
+
+          
+          // console.log('articleArray[0]',articleArray[0]);
+          
+          allArticle.push(articleArray[0].match(/^Câu \d+\:(.*)$/gim)?articleArray[0].match(/^Câu \d+\:(.*)$/gim):articleArray[0].match(/^\d+(\.\d+)*\.(.*)$/gim));
+          // console.log('allArticle',allArticle);
+          
+        } else {
+          // data[a] = { [chapterArray[a]]: [] };
+          allArticle.push()
+
+        }
+
+        // console.log('allArticle[a]',allArticle[a]);
+
+        // allArticle[a] = RemoveNoOrder(allArticle[a]);
+
+        
+        if(allArticle[a]){
+          let countArticle = allArticle[a].length;
+        for (let b = 0; b < countArticle; b++) {
+          let TemRexgexArticleA = allArticle[a][b];
+
+          TemRexgexArticleA = allArticle[a][b].replace(/\\/gm, "\\\\");
+          TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
+          TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
+          TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
+          TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
+
+          if (b < countArticle - 1) {
+            let TemRexgexArticleB = allArticle[a][b + 1];
+
+            TemRexgexArticleB = allArticle[a][b + 1].replace(/\\/gm, "\\\\");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+            // console.log('TemRexgexArticleA',TemRexgexArticleA);
+            // console.log('TemRexgexArticleB',TemRexgexArticleB);
+            let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
+            let re = new RegExp(replace, "gim");
+            
+            if (articleArray[0].match(re)) {
+              let e = articleArray[0].match(re)[0];
+              e = articleArray[0].match(re)[0].replace(/\n+$/, "");
+              e = e.replace(/^\n+/, "");
+
+              point.push(e);
+            } else {
+              point.push([""]);
+            }
+          } else {
+            let TemRexgexArticleB = allArticle[a][b];
+
+            TemRexgexArticleB = allArticle[a][b].replace(/\\/gm, "\\\\");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+
+            let replace = `(?<=${TemRexgexArticleB}\n)(.*\n)*.*$`;
+            let re = new RegExp(replace, "im");
+
+            if (articleArray[0].match(re)) {
+              let e = articleArray[0].match(re)[0];
+              e = articleArray[0].match(re)[0].replace(/\n+$/, "");
+              e = e.replace(/^\n+/, "");
+
+              point.push(e);
+            } else {
+              point.push([""]);
+            }
+          }
+
+          for (let c = 0; c < 1; c++) {
+            d++;
+
+            data[a][chapterArray[a]][b] = { [allArticle[a][b]]: point[d] };
+          }
+        }
+      }else{
+        // console.log('chapterArray[a]',chapterArray[a]);
+        // console.log('articleArray[0]',articleArray[0]);
+        data[a][chapterArray[a]] = [{ " ": articleArray[0].replace(/^\n+/, "") }]
+
+      }
+      }
+
+      data = [{" ":firstOpenClause[0]}, ...data];
+
+      setTextForMachine(data);
+    } else if (i4.match(/(như sau|sau đây|lưu ý):\n(A|B|C|D|E|F|G|H)\./gm)) {
+      //////////////////////////////////////////////////////////  // nếu có phần thứ ...
+      console.log("nếu có phần thứ ...");
+
+      let sectionArray;
+
+      if (i4.match(/^(A|B|C|D|E|F|G|H)\./gm)) {
+        sectionArray = i4.match(/^(A|B|C|D|E|F|G|H)\..*/gm);
+      } else {
+        sectionArray = null;
+      }
+
+      console.log('sectionArray',sectionArray);
+      let sectionArray0 = sectionArray[0].replace(/\\/gm, "\\\\");
+      sectionArray0 = sectionArray0.replace(/\(/gim, "\\(");
+      sectionArray0 = sectionArray0.replace(/\)/gim, "\\)");
+      sectionArray0 = sectionArray0.replace(/\./gim, "\\.");
+      sectionArray0 = sectionArray0.replace(/\?/gim, "\\?")
+      let firstOpenClause = i4.match(new RegExp(`(.*\n)*.*\n*(?=\n${sectionArray0})`,"img"))
+
+
+      let ContentInEachSection; // lấy khoảng giữa các phần
+      data = [];
+      let point = [];
+
+      for (var a = 0; a < sectionArray.length; a++) {
+        ContentInEachSection = [];
+        if (a < sectionArray.length - 1) {
+          let sectionArrayA = sectionArray[a].replace(/\\/gm, "\\\\");
+          sectionArrayA = sectionArrayA.replace(/\(/gim, "\\(");
+          sectionArrayA = sectionArrayA.replace(/\)/gim, "\\)");
+          sectionArrayA = sectionArrayA.replace(/\./gim, "\\.");
+          sectionArrayA = sectionArrayA.replace(/\?/gim, "\\?");
+
+          let sectionArrayB = sectionArray[a + 1].replace(/\\/gm, "\\\\");
+          sectionArrayB = sectionArrayB.replace(/\(/gim, "\\(");
+          sectionArrayB = sectionArrayB.replace(/\)/gim, "\\)");
+          sectionArrayB = sectionArrayB.replace(/\./gim, "\\.");
+          sectionArrayB = sectionArrayB.replace(/\?/gim, "\\?");
+
+          let replace = `(?<=${sectionArrayA}\n)(.*\n)*(?=${
+            sectionArrayB
+          })`;
+          let re = new RegExp(replace, "gim");
+          ContentInEachSection = i4.match(re);
+        } else {
+          let sectionArrayA = sectionArray[a].replace(/\\/gm, "\\\\");
+          sectionArrayA = sectionArrayA.replace(/\(/gim, "\\(");
+          sectionArrayA = sectionArrayA.replace(/\)/gim, "\\)");
+          sectionArrayA = sectionArrayA.replace(/\./gim, "\\.");
+          sectionArrayA = sectionArrayA.replace(/\?/gim, "\\?");
+
+          let replace = `((?<=${sectionArrayA}))((\n.*)*)$`;
+          let re = new RegExp(replace, "gim");
+          ContentInEachSection = i4.match(re);
+        }
+
+        let chapterArray = []; // mảng có từng chapter riêng lẻ
+        let articleArray = []; // mảng có từng Điều riêng lẻ
+
+        if (ContentInEachSection[0].match(/^(V|I|X)*\..*/)) {
+          // nếu mà trong 'phần thứ...' có chương
+
+          chapterArray = ContentInEachSection[0].match(/^(V|I|X)*\..*/gm);
+          data[a] = {};
+          data[a][sectionArray[a]] = [];
+          console.log('chapterArray',chapterArray);
+          console.log("ContentInEachSection[0]",ContentInEachSection[0]);
+          
+          
+          let ContentInEachChapter = [];
+          for (let b = 0; b < chapterArray.length; b++) {
+            if (b < chapterArray.length - 1) {
+              let chapterArrayA = chapterArray[b].replace(/\\/gm, "\\\\")
+              chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
+              chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
+              chapterArrayA = chapterArrayA.replace(/\./gim, "\\.");
+              chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
+    
+              let chapterArrayB = chapterArray[b + 1].replace(/\\/gm, "\\\\")
+              chapterArrayB = chapterArrayB.replace(/\(/gim, "\\(");
+              chapterArrayB = chapterArrayB.replace(/\)/gim, "\\)");
+              chapterArrayB = chapterArrayB.replace(/\./gim, "\\.");
+              chapterArrayB = chapterArrayB.replace(/\?/gim, "\\?");
+
+              let replace = `(?<=${chapterArrayA}\n)(.*\n)*(?=${chapterArrayB})`;
+              let re = new RegExp(replace, "gim");
+              ContentInEachChapter = ContentInEachSection[0].match(re);
+              console.log('replace',replace);
+              console.log('ContentInEachChapter',ContentInEachChapter);
+              
+            } else {
+
+              let chapterArrayA = chapterArray[b].replace(/\\/gm, "\\\\")
+              chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
+              chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
+              chapterArrayA = chapterArrayA.replace(/\./gim, "\\.");
+              chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
+              
+              let replace = `((?<=${chapterArrayA}))((\n.*)*)$`;
+              let re = new RegExp(replace, "gim");
+              ContentInEachChapter = ContentInEachSection[0].match(re);
+              console.log('replace',replace);
+              console.log('ContentInEachChapter',ContentInEachChapter);
+
+            }
+
+            articleArray = ContentInEachChapter[0].match(
+              /^(Câu )?\d+(\.\d+)*(\.|:)(.*)$/gim
+            );
+            data[a][sectionArray[a]][b] = {};
+            data[a][sectionArray[a]][b][chapterArray[b]] = [];
+
+            // articleArray = RemoveNoOrder(articleArray);
+
+            
+            for (let c = 0; c < articleArray.length; c++) {
+              let TemRexgexArticleA = articleArray[c];
+
+              TemRexgexArticleA = articleArray[c].replace(/\\/gim, "\\\\");
+              TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
+              TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
+              TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
+              TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
+              if (c < articleArray.length - 1) {
+                let TemRexgexArticleB = articleArray[c + 1];
+
+                TemRexgexArticleB = articleArray[c + 1].replace(
+                  /\\/gim,
+                  "\\\\"
+                );
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+                let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
+                let re = new RegExp(replace, "gim");
+                point = ContentInEachChapter[0].match(re);
+              } else {
+                let TemRexgexArticleB = articleArray[c];
+
+                TemRexgexArticleB = articleArray[c].replace(/\\/gim, "\\\\");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+                let replace = `((?<=${TemRexgexArticleB}))((\n.*)*)$`;
+                let re = new RegExp(replace, "gim");
+                point = ContentInEachChapter[0].match(re);
+              }
+              let e;
+              if (point) {
+                e = point[0].replace(/\n+$/, "");
+                e = e.replace(/^\n+/, "");
+              } else {
+                e = "";
+              }
+
+              data[a][sectionArray[a]][b][chapterArray[b]].push({
+                [articleArray[c]]: e,
+              });
+            }
+          }
+        } else {
+          // nếu mà trong 'phần thứ...' không có chương
+
+          articleArray = ContentInEachSection[0].match(
+            /^(Câu )?\d+(\.\d+)*(\.|:)(.*)$/gim
+          );
+
+          data[a] = {};
+          data[a][sectionArray[a]] = [];
+
+          // articleArray = RemoveNoOrder(articleArray);
+          for (let b = 0; b < articleArray.length; b++) {
+            // lỡ mà trong 'Điều ...' có dấu ngoặc ),( thì phải thêm \),\(
+            // nếu không vì khi lấy nội dung của khoản sẽ bị lỗi
+
+            let TemRexgexArticleA = articleArray[b];
+
+            TemRexgexArticleA = articleArray[b].replace(/\\/gim, "\\\\");
+            TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
+            TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
+            TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
+            TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
+            if (b < articleArray.length - 1) {
+              let TemRexgexArticleB = articleArray[b + 1];
+
+              TemRexgexArticleB = articleArray[b + 1].replace(/\\/gim, "\\\\");
+              TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+              TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+              TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+              TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+
+              let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
+              let re = new RegExp(replace, "gim");
+              point = ContentInEachSection[0].match(re);
+            } else {
+              let TemRexgexArticleB = articleArray[b];
+              if (articleArray[b].match(/\(/gim)) {
+                TemRexgexArticleB = articleArray[b].replace(/\\/gim, "\\\\");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+                TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+              }
+
+              let replace = `(?<=${TemRexgexArticleB}\n)(.*\n)*.*$`;
+              let re = new RegExp(replace, "igm");
+              point = ContentInEachSection[0].match(re);
+            }
+
+            let e;
+
+            if (point) {
+              e = point[0].replace(/\n+$/, "");
+              e = e.replace(/^\n+/, "");
+            } else {
+              e = "";
+            }
+
+            data[a][sectionArray[a]][b] = [];
+
+            data[a][sectionArray[a]][b] = { [articleArray[b]]: e };
+          }
+        }
+      }
+
+      data = [{" ":firstOpenClause[0]}, ...data];
+
+      setTextForMachine(data);
+    } else if (i4.match(/(như sau|sau đây|lưu ý):\n(Câu )?\d+\.(.*)$/igm)) {
+      /////////////////////////////////////////  // nếu chỉ có Điều ...
+
+      console.log("nếu chỉ có Điều ...");
+      
+      let point;
+      let articleArray = i4.match(/^Câu \d+\:(.*)$/gim)?i4.match(/^Câu \d+\:(.*)$/gim):i4.match(/^\d+(\.\d+)*\.(.*)$/gim)
+      // console.log(articleArray);
+      
+      // articleArray = RemoveNoOrder(articleArray);
+      let articleArray0 = articleArray[0].replace(/\\/gim, "\\\\");
+      articleArray0 = articleArray0.replace(/\(/gim, "\\(");
+      articleArray0 = articleArray0.replace(/\)/gim, "\\)");
+      articleArray0 = articleArray0.replace(/\./gim, "\\.");
+      articleArray0 = articleArray0.replace(/\?/gim, "\\?");
+
+      let firstOpenClause = i4.match(new RegExp(`(.*\n)*.*\n*(?=\n${articleArray0})`,"img"))
+      // console.log('firstOpenClause',firstOpenClause);
+      
+
+      for (let c = 0; c < articleArray.length; c++) {
+        let TemRexgexArticleA = articleArray[c];
+        TemRexgexArticleA = articleArray[c].replace(/\\/gim, "\\\\");
+        TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
+        TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
+        TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
+        TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
+
+        if (c < articleArray.length - 1) {
+          let TemRexgexArticleB = articleArray[c + 1];
+
+          TemRexgexArticleB = articleArray[c + 1].replace(/\\/gim, "\\\\");
+          TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+          TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+          TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+          TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+
+          let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
+          let re = new RegExp(replace, "gim");
+          point = i4.match(re);
+        } else {
+          let TemRexgexArticleB = articleArray[c];
+
+          if (articleArray[c].match(/\(/gim)) {
+            // mới thêm sau này xem có chạy được không
+            TemRexgexArticleB = articleArray[c].replace(/\\/gim, "\\\\");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+            TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+          }
+
+          let replace = `(?<=${TemRexgexArticleB}\n)(.*\n)*.*$`;
+          let re = new RegExp(replace, "gim");
+          point = i4.match(re);
+        }
+        let e;
+        if (point) {
+          e = point[0].replace(/\n+$/, "");
+          e = e.replace(/^\n+/, "");
+        } else {
+          e = "";
+        }
+
+        data[c] = { [articleArray[c]]: e };
+        // data.unshift({"":firstOpenClause});
+        
+      }
+      data = [{" ":firstOpenClause[0]}, ...data];
+      // console.log('data1',data);
+      setTextForMachine(data);
+    }else{
+      data = [{" ":i4}]
+      setTextForMachine(data);
+    }
+
+    
+    console.table("data", data);
+    return data;
+
+  }
+
+  async function clickToConvertContent(){
+  // console.log(lawInfoPush);
+  
+      lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/img)?convertContentOfficialDispatch():convertContent()
+  } 
+
   function addJSONFile() {
     let yearSign = parseInt(lawInfo["lawDaySign"].getYear()) + 1900;
     let lawNumberForPush =
@@ -1362,7 +2018,7 @@ export default function Page() {
       }),
     }).then((res) => {
       res.text();
-      console.log("Push success!");
+      console.log("changejsonfile success!");
     });
   }
 
@@ -1386,14 +2042,19 @@ export default function Page() {
     );
   }
 
+  useEffect
+
   function Push() {
+    // console.log('lawInfoPush["lawDaySign"]',lawInfoPush);
+    
     let yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
     let lawNumberForPush =
       lawInfoPush["lawNumber"] +
       (!lawInfoPush["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
         ? "(" + yearSign + ")"
         : "");
-
+    // console.log('textForMachine',textForMachine);
+    
     // CHANGE JSON FILE
     fetch("/api/push", {
       method: "POST",
@@ -1414,7 +2075,6 @@ export default function Page() {
   function goToStartInput() {
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
     });
     // lawRelatedRef.current?.scrollIntoView({ behavior: "smooth" });
   }
@@ -1427,22 +2087,31 @@ export default function Page() {
 
     window.scrollTo({
       top: document.body.scrollHeight,
-      behavior: "smooth",
     });
   }
 
   function goToStartOutput() {
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
     });
   }
 
   function goToEndOutput() {
-    window.scrollTo({ top: outputArea.current.scrollHeight - 300 });
+    window.scrollTo({ top: outputArea.current.scrollHeight - 100 });
   }
 
   async function copyContent() {
+    setLawNumber('')
+setUnitPublish('')
+setLawKind('')
+setNameSign('')
+setLawDaySign('')
+setLawDescription('')
+setRoleSign('')
+setLawRelated('')
+setContentInput('')
+setContentOutput('')
+
     const clipText = await navigator.clipboard.readText();
     setURL(clipText);
   }
@@ -1659,7 +2328,7 @@ export default function Page() {
           <button
             className={styles.btb}
             style={{ backgroundColor: "forestgreen" }}
-            onClick={() => convertContent()}
+            onClick={() => clickToConvertContent()}
           >
             Get Content
           </button>
