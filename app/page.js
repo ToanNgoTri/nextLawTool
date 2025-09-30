@@ -16,22 +16,11 @@ async function compareLaw() {
 
   console.log(missingLaw);
 }
-
-
-// let allLawSearchId = [];
-// async function getAllLawId() {
-//       for (let a = 0; a < lawObject.length; a++) {
-//         allLawSearchId[a] = lawObject[a]["_id"];
-//       }
-
-//   console.log(allLawSearchId);
-// }
-
-
+  
   return (
+    <div style={{width:'100%', display:'flex', justifyContent:'space-around',marginTop:40,flexDirection:'column', alignItems:'center'}}>
+
     <div style={{width:'100%', display:'flex', justifyContent:'space-around',marginTop:40}}>
-
-
         <a
           href="/once"
           target="_blank"
@@ -66,7 +55,7 @@ async function compareLaw() {
 
           }}
 >
-          check
+          Check
         </a>
         <a
           href="/api/getlawid"
@@ -78,16 +67,29 @@ async function compareLaw() {
 
           }}
 >
-          getlawID
+          GetlawID
         </a>
-        {/* <button
-        onClick={()=>getAllLawId()}>
-          getAllLawId
-        </button> */}
         <button
         onClick={()=>compareLaw()}>
-          compareLaw
+          CompareLaw
         </button>
+        </div>
+        <div style={{width:'100%', display:'flex', justifyContent:'space-around',marginTop:40}}>
+                <a
+          href="/api/population"
+          target="_blank"
+          rel="noopener noreferrer"
+                  style={{
+            padding:10,
+            backgroundColor:'gray',
+
+          }}
+>
+          population
+        </a>
+
+        </div>
+
     </div>
   );
 }
