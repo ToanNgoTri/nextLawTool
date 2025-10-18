@@ -18,11 +18,15 @@ export async function GET(request) {
     const r = await page.evaluate(async () => {
       let doc_title = document.querySelectorAll(".doc-title a");
       let content = {};
+      console.log('doc_title',doc_title);
+      
       doc_title.forEach((item) => {
         let lawTitelForCheck = "";
-        if (item.innerText.match(/(\d+\/?\d*\/QH\d{1,2}|VBHN\-VPQH)/)) {
+        // if (item.innerText.match(/(\d+\/?\d*\/QH\d{1,2}|VBHN\-VPQH)/)) {
+        if (item.innerText.match(/((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/img)) {
+
           let LawNumber = item.innerText.match(
-            /(\d+\/?\d*\/QH\d{1,2}|\d+\/VBHN\-VPQH)/
+            /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )[0];
           let yearSign = item.innerText.match(/20(1|2)\d/)[0];
 
@@ -31,11 +35,11 @@ export async function GET(request) {
 
         } else if (
           item.innerText.match(
-            /(\d+\/?\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
+            /(\d+\/\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )
         ) {
           lawTitelForCheck = item.innerText.match(
-            /(\d+\/?\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
+            /(\d+\/\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )[0];
           console.log('lawTitelForCheck2',lawTitelForCheck);
           
