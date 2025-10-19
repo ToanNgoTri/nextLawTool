@@ -11,7 +11,6 @@ async function eachRun(url) {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
   page.setDefaultNavigationTimeout(50000);
-
   await page.goto(url, { waitUntil: "load" });
 
   let source = await page.content({ waitUntil: "domcontentloaded" });
@@ -26,6 +25,8 @@ async function eachRun(url) {
       ".noidungtracuu >.docitem-1:not(.docitem-9 ~ div), .docitem-2:not(.docitem-9 ~ div), .docitem-5:not(.docitem-9 ~ div), .docitem-11:not(.docitem-9 ~ div), .docitem-12:not(.docitem-9 ~ div)"
       // ".noidungtracuu .docitem-5"
     );
+
+    
 
     let lawRelated = "";
     let roleSign = "";
@@ -179,10 +180,12 @@ async function eachRun(url) {
 
     // OR the faster method that doesn't wait for images to load:
     let source = await page.content({ waitUntil: "domcontentloaded" });
+    console.log('url',url);
 
     const r = await page.evaluate(async () => {
       let a = [];
       let elements = document.querySelectorAll(".doc-title");
+      
       elements.forEach((link) => {
         a.push(link.querySelector("a").href); // In ra giá trị href của mỗi thẻ <a>
       });

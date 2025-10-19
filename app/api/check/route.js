@@ -18,9 +18,10 @@ export async function GET(request) {
     const r = await page.evaluate(async () => {
       let doc_title = document.querySelectorAll(".doc-title a");
       let content = {};
-      console.log('doc_title',doc_title);
       
       doc_title.forEach((item) => {
+          console.log('item',item);
+
         let lawTitelForCheck = "";
         // if (item.innerText.match(/(\d+\/?\d*\/QH\d{1,2}|VBHN\-VPQH)/)) {
         if (item.innerText.match(/((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/img)) {
@@ -35,11 +36,11 @@ export async function GET(request) {
 
         } else if (
           item.innerText.match(
-            /(\d+\/\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
+            /(\d+\/\d*\/\S+\-[^ |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )
         ) {
           lawTitelForCheck = item.innerText.match(
-            /(\d+\/\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
+            /(\d+\/\d*\/\S+\-[^ |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )[0];
           console.log('lawTitelForCheck2',lawTitelForCheck);
           
@@ -70,7 +71,7 @@ export async function GET(request) {
     fs.readFileSync("app/asset/ObjectLawPair.json", "utf8")
   );
   
-
+  
   for (let a = 0; a < Object.keys(ObjectLaw["content"]).length; a++) {
     if (
       !lawPairObject[Object.keys(ObjectLaw["content"])[a].toLowerCase()] &&
