@@ -24,12 +24,12 @@ export async function GET(request) {
 
         let lawTitelForCheck = "";
         // if (item.innerText.match(/(\d+\/?\d*\/QH\d{1,2}|VBHN\-VPQH)/)) {
-        if (item.innerText.match(/((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/img)) {
+        if (item.innerText.match(/((?<= )\d*\/\D{1,8}\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/img)) {
 
           let LawNumber = item.innerText.match(
             /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )[0];
-          let yearSign = item.innerText.match(/20(1|2)\d/)[0];
+          let yearSign = 2020
 
           lawTitelForCheck = LawNumber + "(" + yearSign + ")";
                     console.log('lawTitelForCheck',lawTitelForCheck);

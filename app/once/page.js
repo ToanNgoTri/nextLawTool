@@ -91,13 +91,13 @@ function avd (){
     
   }
 
-    useEffect(() => {
-    if(contentInputText){
+    // useEffect(() => {
+    // if(contentInputText){
 
-      getInfo()
-    }
+    //   getInfo()
+    // }
   
-  }, [contentInputText])
+  // }, [contentInputText])
 
   function beep() {
     const audioContext = new (window.AudioContext ||
@@ -225,7 +225,8 @@ function avd (){
               (!result.lawInfo["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
                 ? "(" + yearSign + ")"
                 : "");
-      
+
+        
             if (
               ObjectLawPair[
                 lawNumberForPush.toLowerCase().replace(/( và| của|,|&)/gim, "")
@@ -246,6 +247,7 @@ function avd (){
       console.log("nameSign", result.lawInfo["nameSign"]);
       console.log("roleSign", result.lawInfo["roleSign"]);
 
+      // goToEndOutput()
       // return infoLaw;
     } catch (e) {
       beep();
@@ -286,7 +288,7 @@ function avd (){
   }
 
   function goToEndOutput() {
-    window.scrollTo({ top: outputArea.current.scrollHeight - 100 });
+    window.scrollTo({ top: outputArea.current.scrollHeight - 300 });
   }
 
   async function copyContent() {

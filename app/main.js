@@ -113,6 +113,8 @@
           roleSignString.slice(5);
       } else if (roleSignString.match(/quốc hội/i)) {
         roleSignString = roleSignString.replace(/quốc hội/i, "Quốc hội");
+      }else if (roleSignString.match(/chủ nhiệm/i)) {
+        roleSignString = roleSignString.replace(/chủ nhiệm/i, "Chủ nhiệm");
       }
       roleSignString = roleSignString.replace(/\s/gm, " ");
       roleSign.push(roleSignString);
@@ -248,7 +250,7 @@ export  async function getLawRelated(text, dayActive,ObjectLawPair,lawNumber) {
     text = text.replace(/\s/gim, " ");
 
     let lawRelatedDemo = text.match(
-      /(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+/gi
+      /(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/\D{1,8}\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+/gi
     );
     lawRelatedDemo =
       lawRelatedDemo &&
@@ -1911,11 +1913,14 @@ try {
       const text = await res.text();
       throw new Error(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
       return
-    }
-
+    }else{
       addJSONFile(lawInfoPush);
     // const data = await res.text();
     console.log("✅ Push thành công:");
+
+    }
+
+    return res
   } catch (error) {
     console.error("❌ Lỗi khi push:", error);
     alert("Gửi dữ liệu thất bại. Vui lòng thử lại!");

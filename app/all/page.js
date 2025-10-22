@@ -57,8 +57,8 @@ export default function Page() {
   const searchParams = useSearchParams();
   const url = searchParams.get("URL");
   const id = searchParams.get("id");
-  const RowAmount = searchParams.get("RowAmount");
-  const PageIndex = searchParams.get("PageIndex");
+  // const RowAmount = searchParams.get("RowAmount");
+  // const PageIndex = searchParams.get("PageIndex");
   // console.log('searchParams',searchParams);
 
   const [ObjectLawPair, setObjectLawPair] = useState({});
@@ -135,6 +135,7 @@ export default function Page() {
     contentText = contentInputText;
     contentText = contentText.replace(/(^\s*|\s*$)/gim, ""); // bỏ các khoảng trắng đầu và cuối nếu có
   }
+
   async function getInfo() {
     try {
       getValueinArea();
@@ -200,12 +201,39 @@ export default function Page() {
       console.log("nameSign", result.lawInfo["nameSign"]);
       console.log("roleSign", result.lawInfo["roleSign"]);
 
+      // goToEndOutput()
       // return infoLaw;
     } catch (e) {
       beep();
       console.log(e);
     }
   }
+  useEffect(() => {
+    if (contentInputText) {
+      getInfo()
+    }
+  }, [contentInputText,lawKindText]);
+
+  useEffect(() => {
+    if (Object.keys(lawInfoPush).length) {
+      // console.log("lawInfoPush", lawInfoPush);
+
+      clickToConvertContent(contentOutputText);
+    }
+  }, [lawInfoPush]);
+
+  useEffect(() => {
+    if (Object.keys(textForMachine).length) {
+      // console.log("textForMachine", textForMachine);
+
+      setTimeout(() => {
+        Push(textForMachine, lawInfoPush, fullText);
+      }, 1000);
+      setTimeout(() => {
+        NaviNext()
+      }, 3000);
+    }
+  }, [textForMachine]);
 
   async function clickToConvertContent(contentOutputText) {
     // console.log(lawInfoPush);
@@ -238,11 +266,11 @@ export default function Page() {
       })
     );
   }
-  useEffect(() => {
-    if (contentInputText) {
-      getInfo();
-    }
-  }, [contentInputText]);
+  // useEffect(() => {
+  //   if (contentInputText) {
+  //     getInfo();
+  //   }
+  // }, [contentInputText]);
 
   // async function Push() {
   //   try {
@@ -332,7 +360,7 @@ export default function Page() {
       console.log("có");
 
       URI = `/all?id=${id}&URL=${encodeURIComponent(
-        url + "&RowAmount=20&PageIndex=1"
+        url + "&RowAmount=100&PageIndex=1"
       )}`;
     } else {
       URI = `/all?id=${id}&URL=${encodeURIComponent(url)}`;
@@ -346,24 +374,26 @@ export default function Page() {
 
     console.log("URI", URI);
 
-    if (currentIndex < 19) {
+    if (currentIndex > 0) {
       // console.log(URI);
 
       nextURI = URI.replace(
         new RegExp(`all\\?id=${id}`, "g"),
-        `all?id=${Number(id) + 1}`
+        `all?id=${Number(id) + -1}`
       );
       // console.log(nextURI);
 
       // nextURI = URI.replace(/(?<=AllURL\/).*(?=\?URL)/g, `${currentIndex + 1}`);
+    }else if(currentIndex == 0 && parseInt(URI.match(/(?<=\%26PageIndex\%3D).*/gim)[0] == 1)){
+      return
     } else {
       console.log(2);
 
-      let nextPage = parseInt(URI.match(/(?<=\%26PageIndex\%3D).*/gim)[0]) + 1;
+      let nextPage = parseInt(URI.match(/(?<=\%26PageIndex\%3D).*/gim)[0]) - 1;
       console.log(nextPage);
 
       nextURI = URI.replace(/(?<=\%26PageIndex\%3D).*/gim, nextPage);
-      nextURI = nextURI.replace(new RegExp(`all\\?id=19`, "g"), `all?id=0`);
+      nextURI = nextURI.replace(new RegExp(`all\\?id=0`, "g"), `all?id=99`);
 
       // nextURI = nextURI.replace(/(?<=AllURL\/).*(?=\?URL)/g, 0);
     }
@@ -404,7 +434,7 @@ export default function Page() {
             display: "flex",
             backgroundColor: "blue",
           }}
-          href={`/all?id=0&URL=` + encodeURIComponent(URL)}
+          href={`/all?id=99&URL=` + encodeURIComponent(URL)}
         >
           Redirect
         </a>
