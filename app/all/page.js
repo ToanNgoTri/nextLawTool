@@ -188,7 +188,7 @@ export default function Page() {
           lawNumberForPush.toLowerCase().replace(/( và| của|,|&)/gim, "")
         ]
       ) {
-        NaviNext()
+        NaviNext();
       }
       console.log("lawDescription", result.lawInfo["lawDescription"]);
       console.log("lawNumber", result.lawInfo["lawNumber"]);
@@ -210,9 +210,9 @@ export default function Page() {
   }
   useEffect(() => {
     if (contentInputText) {
-      getInfo()
+      getInfo();
     }
-  }, [contentInputText,lawKindText]);
+  }, [contentInputText, lawKindText]);
 
   useEffect(() => {
     if (Object.keys(lawInfoPush).length) {
@@ -227,11 +227,16 @@ export default function Page() {
       // console.log("textForMachine", textForMachine);
 
       setTimeout(() => {
-        Push(textForMachine, lawInfoPush, fullText);
+        Push(textForMachine, lawInfoPush, fullText).then((res) => {
+          console.log(res);
+          
+          if (res) {
+            setTimeout(() => {
+              NaviNext()
+            }, 3000);
+          }
+        });
       }, 1000);
-      // setTimeout(() => {
-      //   NaviNext()
-      // }, 3000);
     }
   }, [textForMachine]);
 
@@ -384,8 +389,11 @@ export default function Page() {
       // console.log(nextURI);
 
       // nextURI = URI.replace(/(?<=AllURL\/).*(?=\?URL)/g, `${currentIndex + 1}`);
-    }else if(currentIndex == 0 && parseInt(URI.match(/(?<=\%26PageIndex\%3D).*/gim)[0] == 1)){
-      return
+    } else if (
+      currentIndex == 0 &&
+      parseInt(URI.match(/(?<=\%26PageIndex\%3D).*/gim)[0] == 1)
+    ) {
+      return;
     } else {
       console.log(2);
 

@@ -1917,27 +1917,35 @@ try {
     
       const text = await res.text();
       console.log(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
-      throw new Error(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
-      return
+      // throw new Error(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
+      return false
     }else{
       
       addJSONFile(lawInfoPush);
     // const data = await res.text();
     console.log("✅ Push thành công:");
+      return true
 
     }
 
-    return res
+    // return res
   } catch (error) {
     console.error("❌ Lỗi khi push:", error);
-    alert("Gửi dữ liệu thất bại. Vui lòng thử lại!");
+    // alert("Gửi dữ liệu thất bại. Vui lòng thử lại!");
+          return false
+
   }  }
 
 
    export async function compareLaw(lawID1,lawID2) {
-    let missingLaw = [];
+    let missingLaw1 = [];
+    let missingLaw2 = [];
 
-    missingLaw = lawID2.filter((item) => !lawID1.includes(item));
+    missingLaw1 = lawID2.filter((item) => !lawID1.includes(item));
+    missingLaw2 = lawID1.filter((item) => !lawID2.includes(item));
+
+    let missingLaw = [...missingLaw1,...missingLaw2]
+
 
     console.log(missingLaw);
   }
