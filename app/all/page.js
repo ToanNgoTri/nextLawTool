@@ -229,9 +229,9 @@ export default function Page() {
       setTimeout(() => {
         Push(textForMachine, lawInfoPush, fullText);
       }, 1000);
-      setTimeout(() => {
-        NaviNext()
-      }, 3000);
+      // setTimeout(() => {
+      //   NaviNext()
+      // }, 3000);
     }
   }, [textForMachine]);
 

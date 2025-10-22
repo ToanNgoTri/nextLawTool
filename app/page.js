@@ -4,15 +4,20 @@ import styles from "./page.module.css";
 // import lawObject from "./asset/LawMachine.LawCollection.json";
 import lawID1 from "./asset/allLawID.json";
 import lawID2 from "./asset/allLawID copy.json";
+import {
+compareLaw
+} from './main.js';
+
 
 export default function Home() {
-  async function compareLaw() {
-    let missingLaw = [];
 
-    missingLaw = lawID1.filter((item) => !lawID2.includes(item));
+  // async function compareLaw(lawID1,lawID2) {
+  //   let missingLaw = [];
 
-    console.log(missingLaw);
-  }
+  //   missingLaw = lawID2.filter((item) => !lawID1.includes(item));
+
+  //   console.log(missingLaw);
+  // }
 
   return (
     <div
@@ -77,7 +82,7 @@ export default function Home() {
         >
           GetlawID
         </a>
-        <button onClick={() => compareLaw()}>CompareLaw</button>
+        <button onClick={() => compareLaw(lawID1,lawID2)}>CompareLaw</button>
       </div>
       <div
         style={{

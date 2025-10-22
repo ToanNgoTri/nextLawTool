@@ -1907,13 +1907,20 @@ try {
         contentText: fullText,
       }),
     });
+      // console.log(res);
 
+       const data = await res.json();
+      //  console.log('data',data);
+       
     // Kiểm tra nếu server trả lỗi (status >= 400)
-    if (!res.ok) {
+    if (!res.ok || !data.success) {
+    
       const text = await res.text();
+      console.log(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
       throw new Error(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
       return
     }else{
+      
       addJSONFile(lawInfoPush);
     // const data = await res.text();
     console.log("✅ Push thành công:");
@@ -1926,46 +1933,11 @@ try {
     alert("Gửi dữ liệu thất bại. Vui lòng thử lại!");
   }  }
 
-//   function goToStartInput() {
-//     window.scrollTo({
-//       top: 0,
-//     });
-//     // lawRelatedRef.current?.scrollIntoView({ behavior: "smooth" });
-//   }
 
-//   function goToEndInput() {
-//     // inputArea.current?.scrollTo(0, 0);
-//     // console.log('inputArea.current.scrollHeight',inputArea.current.scrollHeight);
+   export async function compareLaw(lawID1,lawID2) {
+    let missingLaw = [];
 
-//     // window.scrollTo({top:23602+inputArea.current.scrollHeight + lawRelatedRef.current.scrollHeight})
+    missingLaw = lawID2.filter((item) => !lawID1.includes(item));
 
-//     window.scrollTo({
-//       top: document.body.scrollHeight,
-//     });
-//   }
-
-//   function goToStartOutput() {
-//     window.scrollTo({
-//       top: 0,
-//     });
-//   }
-
-//   function goToEndOutput() {
-//     window.scrollTo({ top: outputArea.current.scrollHeight - 100 });
-//   }
-
-//   async function copyContent() {
-//     setLawNumber('')
-// setUnitPublish('')
-// setLawKind('')
-// setNameSign('')
-// setLawDaySign('')
-// setLawDescription('')
-// setRoleSign('')
-// setLawRelated('')
-// setContentInput('')
-// setContentOutput('')
-
-//     const clipText = await navigator.clipboard.readText();
-//     setURL(clipText);
-//   }
+    console.log(missingLaw);
+  }

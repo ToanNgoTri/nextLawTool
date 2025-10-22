@@ -7,7 +7,7 @@ export async function GET() {
   // console.log('body', body);
 
   var data = JSON.parse(
-    fs.readFileSync("app/asset/LawMachine.LawSearchContent.json", "utf8")
+    fs.readFileSync("app/asset/LawMachine.LawCollection.json", "utf8")
   );
 
   let allLawSearchId = [];
