@@ -1908,15 +1908,16 @@ try {
       }),
     });
       // console.log(res);
-
+    console.log('res',res);
+    
        const data = await res.json();
       //  console.log('data',data);
        
     // Kiểm tra nếu server trả lỗi (status >= 400)
     if (!res.ok || !data.success) {
     
-      const text = await res.text();
-      console.log(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
+      // const text = await res.text();
+      console.log(`Fetch thất bại: ${res.status} ${res.statusText}\n${data}`);
       // throw new Error(`Fetch thất bại: ${res.status} ${res.statusText}\n${text}`);
       return false
     }else{

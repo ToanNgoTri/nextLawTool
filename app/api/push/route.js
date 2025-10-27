@@ -58,7 +58,14 @@ export async function POST(req) {
         },
         fullText,
       });
-    }  finally {
+    }catch (error) {
+      console.error("❌ Error in pushLawContent:", error);
+
+
+       console.error("Error inserting:", error);
+
+     return  false
+      }  finally {
       // Ensures that the client will close when you finish/error
       // await client.close();
     }
@@ -84,8 +91,8 @@ export async function POST(req) {
 
   // console.log('body.dataLaw',body.dataLaw);
 
-  let success =  await pushLawContent(body.lawInfo, body.dataLaw, body.lawNumber);
-  await pushLawSearch(body.lawInfo, body.lawNumber, body.contentText);
+   await pushLawContent(body.lawInfo, body.dataLaw, body.lawNumber);
+  let success =  await pushLawSearch(body.lawInfo, body.lawNumber, body.contentText);
   await pushLawSearchDescription(body.lawInfo, body.lawNumber);
 
   return NextResponse.json({ success: success, data: body });
