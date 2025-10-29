@@ -598,20 +598,6 @@ export default function Page() {
           >
             Next
           </button>
-          {/* <button
-            className={styles.btb}
-            style={{backgroundColor:'rgb(255, 123, 0)'}}
-            onClick={() => NaviNext()}
-          >
-            Next
-          </button>
-          <button
-            className={styles.btb}
-            style={{backgroundColor:'black',color:'white'}}
-            onClick={() => NaviHome()}
-          >
-            Back
-          </button> */}
         </div>
         <div className={styles.output_container}>
           <p>Output</p>

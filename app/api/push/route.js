@@ -1,5 +1,5 @@
-const { MongoClient } = require("mongodb");
-import { NextResponse, Request } from "next/server";
+import { MongoClient } from "mongodb";
+import { NextResponse } from "next/server";
 
 const client = new MongoClient(
   "mongodb://thuvienphapluat:ZvQn9683p8NnPXFMdR1VX53HTK3Da1WqyXJpvtgMMASTRdDkyu87lFAL7aR5DiiN@188.245.52.121:6980/?directConnection=true"
@@ -8,39 +8,15 @@ const client = new MongoClient(
 export async function POST(req) {
   const body = await req.json();
 
-  // let success = true
   async function pushLawContent(info, content, id) {
     try {
       const database = client.db("LawMachine");
       const LawContent = database.collection("LawCollection");
       await LawContent.insertOne({ _id: id, info, content });
-      return Response.json({ success: true, message: "Inserted successfully" });
+      return true;
     } catch (error) {
       console.error("❌ Error in pushLawContent:", error);
-
-
-       console.error("Error inserting:", error);
-
-     return  false
-    // Nếu lỗi duplicate key (E11000)
-    // if (error.code === 11000) {
-    //   return Response.json(
-    //     { success: false, message: "Duplicate document _id", error: error.message },
-    //     { status: 409 } // 409 Conflict
-    //   );
-    // }
-
-    // // Các lỗi khác
-    // return Response.json(
-    //   { success: false, message: "Insert failed", error: error.message },
-    //   { status: 500 }
-    // );
-  
-
-
-    } finally {
-      // Ensures that the client will close when you finish/error
-      // await client.close();
+      return false;
     }
   }
 
@@ -58,16 +34,10 @@ export async function POST(req) {
         },
         fullText,
       });
-    }catch (error) {
-      console.error("❌ Error in pushLawContent:", error);
-
-
-       console.error("Error inserting:", error);
-
-     return  false
-      }  finally {
-      // Ensures that the client will close when you finish/error
-      // await client.close();
+      return true;
+    } catch (error) {
+      console.error("❌ Error in pushLawSearch:", error);
+      return false;
     }
   }
 
@@ -83,17 +53,23 @@ export async function POST(req) {
           lawDaySign: info["lawDaySign"],
         },
       });
-    }  finally {
-      // Ensures that the client will close when you finish/error
-      // await client.close();
+      return true;
+    } catch (error) {
+      console.error("❌ Error in pushLawSearchDescription:", error);
+      return false;
     }
   }
 
-  // console.log('body.dataLaw',body.dataLaw);
+  // 🔹 Thực thi 3 thao tác
+  const ok1 = await pushLawContent(body.lawInfo, body.dataLaw, body.lawNumber);
+  const ok2 = await pushLawSearch(body.lawInfo, body.lawNumber, body.contentText);
+  const ok3 = await pushLawSearchDescription(body.lawInfo, body.lawNumber);
 
-   await pushLawContent(body.lawInfo, body.dataLaw, body.lawNumber);
-  let success =  await pushLawSearch(body.lawInfo, body.lawNumber, body.contentText);
-  await pushLawSearchDescription(body.lawInfo, body.lawNumber);
+  const success = ok1 && ok2 && ok3;
 
-  return NextResponse.json({ success: success, data: body });
+  // 🔹 Gửi kết quả ra client
+  return NextResponse.json({
+    success,
+    data: body,
+  });
 }
