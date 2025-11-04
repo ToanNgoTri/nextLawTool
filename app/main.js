@@ -26,6 +26,7 @@
     let nameSign;
     let lawRelated;
     let lawKind;
+    let contentText
 
   // function getValueinArea() {
   //   unitPublish = unitPublishText.split("; ");
