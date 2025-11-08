@@ -29,7 +29,9 @@ export async function GET(request) {
           let LawNumber = item.innerText.match(
             /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )[0];
-          let yearSign = 2020
+          let yearSign = item.innerText.match(
+            /20\d{2}/
+          )[0];
 
           lawTitelForCheck = LawNumber + "(" + yearSign + ")";
                     console.log('lawTitelForCheck',lawTitelForCheck);
@@ -74,9 +76,9 @@ export async function GET(request) {
   
   for (let a = 0; a < Object.keys(ObjectLaw["content"]).length; a++) {
     if (
-      !lawPairObject[Object.keys(ObjectLaw["content"])[a].toLowerCase()] &&
-      (!Object.values(ObjectLaw["content"])[a].match(/nghi\-quyet/gim) ||
-        Object.values(ObjectLaw["content"])[a].match(/hdtp/gim))
+      !lawPairObject[Object.keys(ObjectLaw["content"])[a].toLowerCase()] 
+      // &&  (!Object.values(ObjectLaw["content"])[a].match(/nghi\-quyet/gim) ||
+      //   Object.values(ObjectLaw["content"])[a].match(/hdtp/gim))
     ) {
       content[Object.keys(ObjectLaw["content"])[a]] =
         ObjectLaw["content"][Object.keys(ObjectLaw["content"])[a]];

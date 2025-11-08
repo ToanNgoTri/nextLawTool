@@ -20,12 +20,12 @@ function Page() {
 
   async function checkNghiDinh() {
     setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=20&PageIndex=1"
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
     );
     let a = await fetch(
       `/api/check?url=` +
         encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=20&PageIndex=1"
+          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
         )
     )
       .then((res) => res.json())
@@ -37,12 +37,12 @@ function Page() {
 
   async function checkThongTu() {
     setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=20&PageIndex=1"
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
     );
     let a = await fetch(
       `/api/check?url=` +
         encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=20&PageIndex=1"
+          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
         )
     )
       .then((res) => res.json())
@@ -54,12 +54,12 @@ function Page() {
 
   async function checkVanBanHopNhat() {
     setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=20&PageIndex=1"
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
     );
     let a = await fetch(
       `/api/check?url=` +
         encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=20&PageIndex=1"
+          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
         )
     )
       .then((res) => res.json())
@@ -69,18 +69,34 @@ function Page() {
       });
   }
 
+    async function checkNghiQuyet() {
+    setURL(
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=ngh%E1%BB%8B%20quy%E1%BA%BFt%20h%E1%BB%99i%20%C4%91%E1%BB%93ng%20th%E1%BA%A9m%20ph%C3%A1n&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=0&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
+    );
+    let a = await fetch(
+      `/api/check?url=` +
+        encodeURIComponent(
+          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=ngh%E1%BB%8B%20quy%E1%BA%BFt%20h%E1%BB%99i%20%C4%91%E1%BB%93ng%20th%E1%BA%A9m%20ph%C3%A1n&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=0&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
+        )
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.content);
+        // console.log("res.data", res.content);
+      });
+  }
+
+
   return (
     <div id={styles.container}>
       <div id={styles.inner_container}>
         <div id={styles.input_container}>
-          <span style={{ marginBottom: 40 }}>Tìm phần tử còn thiếu </span>
-
           <textarea
             className={styles.input_area}
             id={styles.content_input}
             value={URL}
             onChange={(e) => setURL(e.target.value)}
-            style={{ width: 500 }}
+            style={{ width: 500 ,marginTop:20}}
             cols={100}
             onKeyDown={(e) => {
               
@@ -134,6 +150,17 @@ function Page() {
               onClick={() => checkVanBanHopNhat()}
             >
               Check Văn bản hợp nhất
+            </button>
+            <button
+              style={{
+                width: "20%",
+                marginTop: 10,
+                marginRight: 20,
+                height: 30,
+              }}
+              onClick={() => checkNghiQuyet()}
+            >
+              Check Nghị quyết
             </button>
           </div>
           <table style={{ paddingTop: 10 }}>
@@ -232,29 +259,6 @@ function Page() {
                 })}
             </tbody>
           </table>
-
-          {/* <form className={styles.input_part__container} action="/check" method="get">
-            <div
-              style="
-                padding: 15px;
-                border: 1px solid black;
-                text-align: center;
-                justify-self: center;
-                cursor: pointer;
-              "
-            >
-              URL
-            </div>
-
-            <input
-              type="text"
-              placeholder="Check URL..."
-              class="input_part__container_input"
-              value="<%= URL %>"
-              name="URL"
-            />
-            <button style="width: 20%" type="submit">Next</button>
-          </form> */}
         </div>
       </div>
     </div>
