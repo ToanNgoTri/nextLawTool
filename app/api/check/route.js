@@ -30,7 +30,7 @@ export async function GET(request) {
             /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
           )[0];
           let yearSign = item.innerText.match(
-            / 20\d{2} /
+            /20\d{2}/
           )[0];
 
           lawTitelForCheck = LawNumber + "(" + yearSign + ")";
