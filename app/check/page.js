@@ -8,7 +8,7 @@ function Page() {
   // console.log("data", data);
 
   async function check() {
-    // console.log(URL);
+    console.log(URL);
 
     let a = await fetch(`/api/check?url=` + encodeURIComponent(URL))
       .then((res) => res.json())
@@ -19,6 +19,7 @@ function Page() {
   }
 
   async function checkNghiDinh() {
+    
     setURL(
       "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=200&PageIndex=1"
     );
