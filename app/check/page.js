@@ -87,6 +87,22 @@ function Page() {
       });
   }
 
+    async function checkLuat() {
+    setURL(
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=lu%E1%BA%ADt&search=&search=&DocTypeIds=58&DocTypeIds=10&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=100&PageIndex=1"
+    );
+    let a = await fetch(
+      `/api/check?url=` +
+        encodeURIComponent(
+          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=lu%E1%BA%ADt&search=&search=&DocTypeIds=58&DocTypeIds=10&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=100&PageIndex=1"
+        )
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.content);
+        // console.log("res.data", res.content);
+      });
+  }
 
   return (
     <div id={styles.container}>
@@ -162,6 +178,17 @@ function Page() {
               onClick={() => checkNghiQuyet()}
             >
               Check Nghị quyết
+            </button>
+            <button
+              style={{
+                width: "20%",
+                marginTop: 10,
+                marginRight: 20,
+                height: 30,
+              }}
+              onClick={() => checkLuat()}
+            >
+              Check Luật
             </button>
           </div>
           <table style={{ paddingTop: 10 }}>

@@ -36,20 +36,20 @@ async function eachRun(url) {
       lawRelated = "";
       roleSign = "";
     } else {
-      lawRelated = document.querySelector("#chidanthaydoind >.docitem-14")
-        ? document.querySelector("#chidanthaydoind >.docitem-14").innerText
+      lawRelated = document.querySelector(".the-document-body >.docitem-14")
+        ? document.querySelector(".the-document-body >.docitem-14").innerText
         : "";
       lawRelated =
         lawRelated +
         "\n" +
-        (document.querySelector("#chidanthaydoind >.docitem-15")
-          ? document.querySelector("#chidanthaydoind >.docitem-15").innerText
+        (document.querySelector(".the-document-body >.docitem-15")
+          ? document.querySelector(".the-document-body >.docitem-15").innerText
           : "");
       lawRelated = lawRelated.replace(/\_*/g, "");
       lawRelated = lawRelated.replace(/\n+/g, "\n");
 
-      roleSign = document.querySelector("#chidanthaydoind >.docitem-9")
-        ? document.querySelector("#chidanthaydoind >.docitem-9").innerText
+      roleSign = document.querySelector(".the-document-body >.docitem-9")
+        ? document.querySelector(".the-document-body >.docitem-9").innerText
         : "";
       roleSign = roleSign.replace(/\u00A0/gim, " ");
       roleSign = roleSign.replace(/\n +/g, "\n");
@@ -75,8 +75,8 @@ async function eachRun(url) {
     let nameSign;
     let lawDaySign;
     let lawDescription;
-    lawDescription = document.querySelector(".the-document-summary")
-      ? document.querySelector(".the-document-summary").innerText
+    lawDescription = document.querySelector(".the-document-title")
+      ? document.querySelector(".the-document-title").innerText
       : "";
 
     lawDescription = lawDescription.replace(/^ */, "");
@@ -94,21 +94,21 @@ async function eachRun(url) {
         ".div-table tr:nth-child(2) td:nth-child(4)"
       )
         ? document.querySelector(".div-table tr:nth-child(2) td:nth-child(4)")
-            .innerText
+            .innerText.trim()
         : "";
 
       lawKind = document.querySelector(
         ".div-table tr:nth-child(2) td:nth-child(2)"
       )
         ? document.querySelector(".div-table tr:nth-child(2) td:nth-child(2)")
-            .innerText
+            .innerText.trim()
         : "";
 
       nameSign = document.querySelector(
         ".div-table tr:nth-child(3) td:nth-child(4)"
       )
         ? document.querySelector(".div-table tr:nth-child(3) td:nth-child(4)")
-            .innerText
+            .innerText.trim()
         : "";
 
       lawDaySign = document.querySelector(
@@ -128,21 +128,21 @@ async function eachRun(url) {
         ".div-table tr:nth-child(1) td:nth-child(2)"
       )
         ? document.querySelector(".div-table tr:nth-child(1) td:nth-child(2)")
-            .innerText
+            .innerText.trim()
         : "";
 
       lawKind = document.querySelector(
         ".div-table tr:nth-child(3) td:nth-child(2)"
       )
         ? document.querySelector(".div-table tr:nth-child(3) td:nth-child(2)")
-            .innerText
+            .innerText.trim()
         : "";
 
       nameSign = document.querySelector(
         ".div-table tr:nth-child(3) td:nth-child(4)"
       )
         ? document.querySelector(".div-table tr:nth-child(3) td:nth-child(4)")
-            .innerText
+            .innerText.trim()
         : "";
 
       lawDaySign = document.querySelector(
