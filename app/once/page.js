@@ -68,9 +68,6 @@ export default function Page() {
     }
   }, []);
 
-function avd (){
-  fetch
-}
   async function receive() {
 
     fetch(`/api/url?url=${url ? url : URL}`).then((res) =>
@@ -137,11 +134,13 @@ function avd (){
   let lawNameDisplay;
 
   function getValueinArea() {
-    unitPublish = unitPublishText.split("; ");
+    unitPublish = unitPublishText.split(/[;,]/).map(item => item.trim());
     lawDaySign = lawDaySignText.replace(/\s/gim, "");
 
-    nameSign = nameSignText.split("; ");
-    // nameSign = [];
+    // nameSign = nameSignText.split(";");
+    
+    nameSign = nameSignText.split(/[;,]/).map(item => item.trim());
+   
 
     lawDescription = lawDescriptionText;
 

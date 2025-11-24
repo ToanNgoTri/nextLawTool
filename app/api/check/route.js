@@ -24,29 +24,30 @@ export async function GET(request) {
 
         let lawTitelForCheck = "";
         // if (item.innerText.match(/(\d+\/?\d*\/QH\d{1,2}|VBHN\-VPQH)/)) {
-        if (item.innerText.match(/((?<= )\d*\/\D{1,8}\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/img)) {
+        if (item.innerText.replace(':',"").match(/((?<= )\d*\/\D{1,8}\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/img)) {
 
-          let LawNumber = item.innerText.match(
-            /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
+          let LawNumber = item.innerText.replace(':',"").match(
+            /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/
           )[0];
-          let yearSign = item.innerText.match(
+          let yearSign = item.innerText.replace(':',"").match(
             /20\d{2}/
           )[0];
 
           lawTitelForCheck = LawNumber + "(" + yearSign + ")";
-                    console.log('lawTitelForCheck',lawTitelForCheck);
+          console.log('lawTitelForCheck',lawTitelForCheck);
 
         } else if (
-          item.innerText.match(
-            /(\d+\/\d*\/\S+\-[^ |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
+          item.innerText.replace(':',"").match(
+            /(\d+\/\d*\/\S+\-?[^ |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/
           )
         ) {
-          lawTitelForCheck = item.innerText.match(
-            /(\d+\/\d*\/\S+\-[^ |\:|\"|\'|\;|\{|\}|”)]+)(?= )/
+          lawTitelForCheck = item.innerText.replace(':',"").match(
+            /(\d+\/\d*\/\S+\-?[^ |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/
           )[0];
           console.log('lawTitelForCheck2',lawTitelForCheck);
           
         } else {
+          lawTitelForCheck = item.innerText
          console.log('lawTitelForCheck3',lawTitelForCheck);
 
         }
