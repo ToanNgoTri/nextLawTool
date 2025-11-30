@@ -1888,6 +1888,11 @@ try {
         ? "(" + yearSign + ")"
         : "");
 
+        if(!textForMachine || !lawInfoPush || !lawNumberForPush || !fullText){
+      console.log('Thiếu trường');
+      
+     return false 
+    }
     const res = await fetch("/api/push", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
