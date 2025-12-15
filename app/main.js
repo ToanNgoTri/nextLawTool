@@ -122,11 +122,7 @@
   ) {
     let nameSign = [];
     let unitPbDemo = [];
-    // console.log('roleSignString',roleSignString);
-    // console.log('unitPublish',unitPublish);
-    // console.log('lawKind',lawKind);
-    
-    // console.log('nameSignArrayDemo1',nameSignArrayDemo);
+
     nameSignArrayDemo.map((nameSignDemo, i) => {
       let nameSignString = roleSignString.match(
         new RegExp(`.*${nameSignDemo}.*`, "img")

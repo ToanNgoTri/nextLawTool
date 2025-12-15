@@ -134,12 +134,12 @@ export default function Page() {
   let lawNameDisplay;
 
   function getValueinArea() {
-    unitPublish = unitPublishText.split(/[;,]/).map(item => item.trim());
+    unitPublish = unitPublishText.split(/[;]/).map(item => item.trim());
     lawDaySign = lawDaySignText.replace(/\s/gim, "");
 
     // nameSign = nameSignText.split(";");
     
-    nameSign = nameSignText.split(/[;,]/).map(item => item.trim());
+    nameSign = nameSignText.split(/[;]/).map(item => item.trim());
    
 
     lawDescription = lawDescriptionText;
