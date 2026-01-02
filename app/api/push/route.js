@@ -31,6 +31,7 @@ export async function POST(req) {
           lawDescription: info["lawDescription"],
           lawNameDisplay: info["lawNameDisplay"],
           lawDaySign: info["lawDaySign"],
+          lawDayActive: info["lawDayActive"],
         },
         fullText,
       });
@@ -51,6 +52,7 @@ export async function POST(req) {
           lawDescription: info["lawDescription"],
           lawNameDisplay: info["lawNameDisplay"],
           lawDaySign: info["lawDaySign"],
+          lawDayActive: info["lawDayActive"],
         },
       });
       return true;
@@ -62,7 +64,11 @@ export async function POST(req) {
 
   // 🔹 Thực thi 3 thao tác
   const ok1 = await pushLawContent(body.lawInfo, body.dataLaw, body.lawNumber);
-  const ok2 = await pushLawSearch(body.lawInfo, body.lawNumber, body.contentText);
+  const ok2 = await pushLawSearch(
+    body.lawInfo,
+    body.lawNumber,
+    body.contentText
+  );
   const ok3 = await pushLawSearchDescription(body.lawInfo, body.lawNumber);
 
   const success = ok1 && ok2 && ok3;

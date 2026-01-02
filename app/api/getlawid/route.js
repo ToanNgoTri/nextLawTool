@@ -7,7 +7,7 @@ export async function GET() {
   // console.log('body', body);
 
   var data = JSON.parse(
-    fs.readFileSync("app/asset/LawMachine.LawSearchDescription.json", "utf8")
+    fs.readFileSync("app/asset/LawMachine.LawCollectionid.json", "utf8")
   );
 
   let allLawSearchId = [];
@@ -16,15 +16,6 @@ export async function GET() {
     allLawSearchId[a] = data[a]["_id"];
   }
 
-
-//     var data = JSON.parse(
-//     fs.readFileSync("app/asset/ObjectLawPair.json", "utf8")
-//   );
-
-// let allLawSearchId = Object.values(data)
-  
-
-  // console.log(data);
 
   return NextResponse.json(allLawSearchId );
 }

@@ -4,13 +4,9 @@ import styles from "./page.module.css";
 // import lawObject from "./asset/LawMachine.LawCollection.json";
 import lawID1 from "./asset/allLawID.json";
 import lawID2 from "./asset/allLawID copy.json";
-import {
-compareLaw
-} from './main.js';
-
+import { compareLaw } from "./main.js";
 
 export default function Home() {
-
   return (
     <div
       style={{
@@ -74,7 +70,7 @@ export default function Home() {
         >
           GetlawID
         </a>
-        <button onClick={() => compareLaw(lawID1,lawID2)}>CompareLaw</button>
+        <button onClick={() => compareLaw(lawID1, lawID2)}>CompareLaw</button>
       </div>
       <div
         style={{
@@ -95,8 +91,7 @@ export default function Home() {
         >
           population
         </a>
-
-                <a
+        <a
           href="/api/lawcollection"
           target="_blank"
           rel="noopener noreferrer"
@@ -107,8 +102,6 @@ export default function Home() {
         >
           LawCollection
         </a>
-
-
         <a
           href="/api/lawsearchcontent"
           target="_blank"
@@ -120,8 +113,17 @@ export default function Home() {
         >
           LawSearchContent
         </a>
-
-
+        <a
+          href="/api/lawobjnew"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: 10,
+            backgroundColor: "gray",
+          }}
+        >
+          lawObjNew
+        </a>
         <a
           href="/api/lawsearchdescription"
           target="_blank"
@@ -133,7 +135,6 @@ export default function Home() {
         >
           LawSearchDescription
         </a>
-
       </div>
     </div>
   );
