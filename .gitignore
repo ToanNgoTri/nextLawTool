@@ -43,3 +43,14 @@ next-env.d.ts
 app/asset/LawMachine.LawCollection.json
 app/asset/LawMachine.LawSearchContent.json
 app/asset/LawMachine.LawSearchDescription.json
+app/asset/LawCollection2.json
+app/asset/lawCollectionResult.json
+app/asset/lawCollectionResult1.json
+app/asset/lawCollectionResult2.json
+app/asset/lawContentResult.json
+app/asset/lawDesResult.json
+app/asset/lawNameDayActivePair.json
+app/asset/lawNamePairDescription.json
+app/asset/lawsearchContent2.json
+app/asset/LawMachine.LawSearchContentORD.json
+app/asset/LawMachine.LawSearchDescriptionORD.json

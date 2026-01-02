@@ -11,14 +11,6 @@ compareLaw
 
 export default function Home() {
 
-  // async function compareLaw(lawID1,lawID2) {
-  //   let missingLaw = [];
-
-  //   missingLaw = lawID2.filter((item) => !lawID1.includes(item));
-
-  //   console.log(missingLaw);
-  // }
-
   return (
     <div
       style={{
@@ -103,6 +95,45 @@ export default function Home() {
         >
           population
         </a>
+
+                <a
+          href="/api/lawcollection"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: 10,
+            backgroundColor: "gray",
+          }}
+        >
+          LawCollection
+        </a>
+
+
+        <a
+          href="/api/lawsearchcontent"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: 10,
+            backgroundColor: "gray",
+          }}
+        >
+          LawSearchContent
+        </a>
+
+
+        <a
+          href="/api/lawsearchdescription"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: 10,
+            backgroundColor: "gray",
+          }}
+        >
+          LawSearchDescription
+        </a>
+
       </div>
     </div>
   );
