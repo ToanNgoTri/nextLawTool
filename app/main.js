@@ -393,6 +393,7 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
     return (lawRelatedObject[law] = 0);
   });
 
+  
   let lawPairObject = ObjectLawPair;
   for (let a = 0; a < Object.keys(lawRelatedObject).length; a++) {
     if (
@@ -400,26 +401,30 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
         Object.keys(lawRelatedObject)
           [a].toLowerCase()
           .replace(/( và| của|,|&)/gim, "")
-      ])  {
-        lawRelatedObject[Object.keys(lawRelatedObject)[a]] =
-          lawPairObject[
-            Object.keys(lawRelatedObject)
-              [a].toLowerCase()
-              .replace(/( và| của|,|&)/gim, "")
-          ];
-        // console.log(2);
-        } else if(
+      ]
+    ) {
+      lawRelatedObject[
+        lawPairObject[
+          Object.keys(lawRelatedObject)
+            [a].toLowerCase()
+            .replace(/( và| của|,|&)/gim, "")
+        ]
+      ] = Object.keys(lawRelatedObject)[a];
+
+        // console.log(Object.keys(lawRelatedObject)
+        // [a].toLowerCase()
+        // .replace(/( và| của|,|&)/gim, ""));
+        
+      // delete lawRelatedObject[Object.keys(lawRelatedObject)[a]];
+
+    } else if (
       lawPairObject[
         Object.keys(lawRelatedObject)[a].replace(/( và| của|,|&)/gim, "")
       ]
-    ){
-        lawRelatedObject[Object.keys(lawRelatedObject)[a]] =
-          lawPairObject[
-            Object.keys(lawRelatedObject)
-              [a]
-          ];
-
-  } else if (Object.keys(lawRelatedObject)[a].match(/Hiến pháp/gim)) {
+    ) {
+      lawRelatedObject[Object.keys(lawRelatedObject)[a]] =
+        lawPairObject[Object.keys(lawRelatedObject)[a]];
+    } else if (Object.keys(lawRelatedObject)[a].match(/Hiến pháp/gim)) {
       // console.log("dayActive", dayActive);
 
       const date = new Date(dayActive);
@@ -440,8 +445,13 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
     } else {
       lawRelatedObject[Object.keys(lawRelatedObject)[a]] = 0;
     }
+
+    
   }
-  return lawRelatedObject;
+  const result = Object.fromEntries(
+Object.entries(lawRelatedObject).filter(([key]) => !key.includes(' '))
+);
+  return result;
 }
 
 export function RemoveNoOrder(array) {
@@ -1810,7 +1820,6 @@ export function convertContentOfficialDispatch(contentOutputText) {
   console.table("data", data);
   return { data, fullText: i4 };
 }
-
 
 export function addJSONFile(lawInfo) {
   let yearSign = parseInt(lawInfo["lawDaySign"].getYear()) + 1900;

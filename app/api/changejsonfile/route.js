@@ -15,22 +15,12 @@ export async function POST(req) {
         .toLowerCase()
         .replace(/( và| của|,|&)/gim, "")
     ] = body.lawNumber;
-    // console.log(body.lawNumber);
-    // console.log(
-    //   body.lawInfo["lawNameDisplay"]
-    //     .toLowerCase()
-    //     .replace(/( và| của|,|&)/gim, "")
-    // );
-
-    data3[body.lawNumber.toLowerCase()] = body.lawNumber;
+    data3[body.lawNumber] = body.lawInfo["lawDescription"];
     // console.log(body.lawNumber);
     // console.log(body.lawNumber.toLowerCase());
 
   } else {
     data3[body.lawNumber] = body.lawInfo["lawDescription"];
-    // console.log(2);
-    // console.log(body.lawNumber);
-    // console.log(body.lawInfo["lawDescription"]);
   }
 
   fs.writeFile(
