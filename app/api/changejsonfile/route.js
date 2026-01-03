@@ -18,14 +18,13 @@ export async function POST(req) {
     data3[body.lawNumber] = body.lawInfo["lawDescription"];
     // console.log(body.lawNumber);
     // console.log(body.lawNumber.toLowerCase());
-
   } else {
     data3[body.lawNumber] = body.lawInfo["lawDescription"];
   }
 
   fs.writeFile(
     "app/asset/ObjectLawPair.json",
-    JSON.stringify(data3),
+    JSON.stringify(data3, null, 2),
     function (err, data) {
       if (err) throw err;
       console.log("write file successfully");
