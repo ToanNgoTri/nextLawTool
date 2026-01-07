@@ -196,7 +196,7 @@ export default function Page() {
           lawNameDisplay,
           lawDescription,
           lawKind,
-          unitPublish
+          unitPublish,
         );
         setContentOutput(result.partTwo);
       } else {

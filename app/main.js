@@ -489,27 +489,9 @@ export function convertPartOne(contentInputText) {
   let b9 = b8.replace(/\n+/gim, "\n"); // biến nhiều xuống dòng thành 1 xuống dòng
 
   let b10 = b9;
-  // let b10a = []; // kết nối "Phần thứ với nội dung "phần thứ ...", trường hợp bị tách 2 hàng
-
-  // for (let c = 0; c < 5; c++) {
-  //   if (!c) {
-  //     b10a[c] = b9.replace(
-  //       /(?<=^(Phần|PHẦN)\s(THỨ|I|l|1).*)\n(?!(((Điều|Ðiều|Điều) \d.*)|(chương (V|I|X|\d).*$.*)))/gim,
-  //       ": "
-  //     );
-  //   } else {
-  //     b10a[c] = b10a[c - 1].replace(
-  //       /(?<=^(Phần|PHẦN)\s(THỨ|I|l|1).*)\n(?!(((Điều|Ðiều|Điều) \d.*)|(chương (V|I|X|\d).*$.*)))/gim,
-  //       " "
-  //     );
-  //   }
-  // }
-  // b10 = b10a[4];
-
   let b11 = b10.replace(/(\[|\()\d*(\]|\))/gim, ""); // bỏ chỉ mục số đi
 
   let b12 = b11.replace(/(?<=^Chương (V|I|X|\d)*)\.?\s/gim, ": ");
-  // b12 = b12.replace(/(?<=^Chương (V|I|X|\d)*) /gim, ":");
   b12 = b12.replace(/(?<=^Chương.{0,5})l/gim, "I");
   let b13 = b12.replace(/  +/gim, " "); // bỏ khoảng cách 2 space
 
@@ -518,20 +500,23 @@ export function convertPartOne(contentInputText) {
 
 export function convertPartTwo(partOne, nameSign) {
   let b14 = "";
+
+      let lawRelatedText = ''
+
   for (let t = 0; t <= 30; t++) {
     let clause;
     clause = partOne.match(`(?<=(\n.*){${t}}).*`, "im")[[0]];
-
     if (
       lawKind ? lawKind.match(/nghị quyết/i) : partOne.match(/^nghị quyết/i)
     ) {
       // bỏ phần đầu
+      // lawRelatedText = b14.match(/^(.*\n)*QUYẾT NGHỊ(:|\.|\s|)\n/img)[0]
       b14 = partOne.replace(/^(.*\n)*QUYẾT NGHỊ(:|\.|\s|)\n/i, "");
-
       break;
     } else if (clause.match(/^(Phần|PHẦN)\s(THỨ|I|l|1)/gim)) {
       let firstSection = partOne.match(/^(Phần|PHẦN)\s(THỨ|I|l|1).*/im)[0];
 
+      // lawRelatedText = b14.match(new RegExp(`(.*\\n)*(?=${firstSection})\\b`, "img"))[0]
       b14 = partOne.replace(
         new RegExp(`(.*\\n)*(?=${firstSection})\\b`, "img"),
         ""
@@ -539,7 +524,9 @@ export function convertPartTwo(partOne, nameSign) {
       break;
     } else if (clause.match(/^(Chương|CHƯƠNG)\s(I|l|1)/gim)) {
       let firstChapter = partOne.match(/^(Chương|CHƯƠNG)\s(I|l|1).*/im)[0];
-
+      console.log(partOne);
+      
+      // lawRelatedText = b14.match(new RegExp(`(.*\\n)*(?=${firstChapter})`, "img"))[0]
       b14 = partOne.replace(
         new RegExp(`(.*\\n)*(?=${firstChapter})`, "img"),
         ""
@@ -549,6 +536,8 @@ export function convertPartTwo(partOne, nameSign) {
       let firstArticle = partOne.match(
         /^(Điều|Ðiều|Điều)\s(I|l|1).{0,10}/im
       )[0]; // lấy 10 ký tự thôi cho chắc
+
+      lawRelatedText = b14.match(new RegExp(`(.*\\n)*(?=${firstArticle})`, "img"))[0]
       b14 = partOne.replace(
         new RegExp(`(.*\\n)*(?=${firstArticle})`, "img"),
         ""
@@ -622,6 +611,8 @@ export function convertPartTwo(partOne, nameSign) {
   let b17 = b16.replace(/\n*VĂN PHÒNG QUỐC HỘI(\n.*)*/gim, ""); // bỏ hàng dư trống ở cuối
   b17 = b17.replace(/\n*XÁC THỰC VĂN BẢN HỢP NHẤT(\n.*)*/gim, "");
 
+  // console.log('lawRT',lawRelatedText);
+  
   return b17;
 }
 
@@ -741,7 +732,7 @@ export async function convertBareTextInfo(
   // nameSign = nameSignArrayDemo;
   let partOne, partTwo;
   if (lawNumber.match(/^\d+\/(TAND|VKS).+\-/gim)) {
-    partOne = convertPartOneOfficialDispatch(inputText);
+    partOne = convertPartOneOfficialDispatch(inputText); ////////////////////////////////////////////////////////////////////////////////////
 
     partTwo = convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo);
   } else {
@@ -787,19 +778,6 @@ export async function convertBareTextInfo(
 
   lawDaySign = addDaysToDate(lawDaySign, 0);
 
-  //     setLawInfoPush({
-  //   unitPublish,
-  //   lawDaySign,
-  //   nameSign,
-  //   roleSign,
-  //   lawDayActive,
-  //   lawDescription,
-  //   lawNumber,
-  //   lawRelated,
-  //   lawKind,
-  //   lawNameDisplay,
-  // });
-
   lawInfo["lawDescription"] = lawDescription;
   lawInfo["lawNumber"] = lawNumber;
   lawInfo["unitPublish"] = unitPublish;
@@ -810,20 +788,6 @@ export async function convertBareTextInfo(
   lawInfo["lawRelated"] = lawRelated;
   lawInfo["nameSign"] = nameSign;
   lawInfo["roleSign"] = roleSign;
-
-  // console.log("lawDescription", lawInfo["lawDescription"]);
-  // console.log("lawNumber", lawInfo["lawNumber"]);
-  // console.log("lawKind", lawInfo["lawKind"]);
-  // console.log("lawDaySign", lawInfo["lawDaySign"]);
-  // console.log("lawDayActive", lawInfo["lawDayActive"]);
-  // console.log("lawNameDisplay", lawInfo["lawNameDisplay"]);
-  // console.log("lawRelated", lawInfo["lawRelated"]);
-  // console.log("unitPublish", lawInfo["unitPublish"]);
-  // console.log("nameSign", lawInfo["nameSign"]);
-  // console.log("roleSign", lawInfo["roleSign"]);
-
-  // setContentOutput(partTwo);
-  // console.log('lawInfo1',lawInfo);
 
   return { lawInfo, partTwo };
 }
@@ -839,13 +803,12 @@ export async function getNormalTextInfo(
   lawNameDisplay,
   lawDescription,
   lawKind,
-  unitPublishAray
+  unitPublishAray,
+  lawRelated
 ) {
   console.log("getNormalTextInfo");
-
-  // let roleSignString = roleSignText;
-  // console.log('nameSignArrayDemo',nameSignArrayDemo);
-
+  // console.log('Đây là lawRelated',lawRelatedText);
+  
   nameSign = getArrangeUnitPublic(
     roleSignText,
     nameSignArrayDemo,
@@ -873,33 +836,9 @@ export async function getNormalTextInfo(
     lawNumber
   );
 
-  // setContentOutput(contentText);
 
   lawDaySign = addDaysToDate(lawDaySign, 0);
 
-  // setLawInfoPush({
-  //   unitPublish,
-  //   lawDaySign,
-  //   nameSign,
-  //   roleSign,
-  //   lawDayActive,
-  //   lawDescription,
-  //   lawNumber,
-  //   lawRelated,
-  //   lawKind,
-  //   lawNameDisplay,
-  // });
-
-  // console.log("lawDescription", lawInfo["lawDescription"]);
-  // console.log("lawNumber", lawInfo["lawNumber"]);
-  // console.log("lawKind", lawInfo["lawKind"]);
-  // console.log("lawDaySign", lawInfo["lawDaySign"]);
-  // console.log("lawDayActive", lawInfo["lawDayActive"]);
-  // console.log("lawNameDisplay", lawInfo["lawNameDisplay"]);
-  // console.log("lawRelated", lawInfo["lawRelated"]);
-  // console.log("unitPublish", lawInfo["unitPublish"]);
-  // console.log("nameSign", lawInfo["nameSign"]);
-  // console.log("roleSign", lawInfo["roleSign"]);
 
   return {
     lawInfo: {
