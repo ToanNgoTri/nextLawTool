@@ -45,6 +45,7 @@ export function getRoleSign(contentRoleSign, nameSign) {
   contentRoleSign = contentRoleSign.replace(/\n\[daky\]/gim, "");
 
   let roleSign = [];
+  
   for (let a = 0; a < nameSign.length; a++) {
     // console.log('nameSign',nameSign);
     // console.log('contentRoleSign',contentRoleSign);
@@ -536,8 +537,10 @@ export function convertPartTwo(partOne, nameSign) {
       let firstArticle = partOne.match(
         /^(Điều|Ðiều|Điều)\s(I|l|1).{0,10}/im
       )[0]; // lấy 10 ký tự thôi cho chắc
-
-      lawRelatedText = b14.match(new RegExp(`(.*\\n)*(?=${firstArticle})`, "img"))[0]
+        // console.log('partOne',partOne);
+        // console.log('firstArticle',firstArticle);
+        
+      // lawRelatedText = partOne.match(new RegExp(`(.*\\n)*(?=${firstArticle})`, "img"))[0]
       b14 = partOne.replace(
         new RegExp(`(.*\\n)*(?=${firstArticle})`, "img"),
         ""
@@ -642,13 +645,14 @@ export function convertPartOneOfficialDispatch(contentInputText) {
   return b13;
 }
 
-export function convertPartTwoOfficialDispatch(partOne) {
+export function convertPartTwoOfficialDispatch(partOne,nameSign) {
   let b14 = partOne;
   let b15 = b14;
   if (b14.match(/(?<=.*\.\/\.)(\n.*)*/gim)) {
     b15 = b14.replace(/(?<=.*\.\/\.)(\n.*)*/gim, ""); //  bỏ tất cả sau ./.
   }
-
+  // console.log(nameSign);
+  
   if (b14.match(/^TM\s?\./m)) {
     b15 = b15.replace(/^TM\s?.*(\n.*)*/m, "");
   } else if (b15.match(/^KT\s?\./m)) {
