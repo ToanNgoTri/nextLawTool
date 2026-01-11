@@ -151,7 +151,7 @@ export default function Page() {
     lawKind = lawKindText.replace(/(^\s*|\s*$)/gim, "");
 
     // console.log('lawDescription',lawDescription);
-    lawNameDisplay = lawDescription;
+    lawNameDisplay = lawDescription
     if (lawKind.match(/^(luật|bộ luật)/i)) {
       lawNameDisplay = lawDescription.replace(/,* của Quốc hội.*số.*/i, "");
       // lawNameDisplay = lawNameDisplay.replace(/,* số \d.*của Quốc hội.*/i, "");
@@ -211,7 +211,6 @@ export default function Page() {
           lawDaySign,
           lawNameDisplay,
           lawDescription,
-          lawKind
         );
         // console.log('infoLaw',result);
         setContentOutput(result.partTwo);

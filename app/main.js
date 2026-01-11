@@ -394,7 +394,8 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
     return (lawRelatedObject[law] = 0);
   });
 
-  
+    // console.log('lawRelatedObject',lawRelatedObject);
+    
   let lawPairObject = ObjectLawPair;
   for (let a = 0; a < Object.keys(lawRelatedObject).length; a++) {
     if (
@@ -412,11 +413,6 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
         ]
       ] = Object.keys(lawRelatedObject)[a];
 
-        // console.log(Object.keys(lawRelatedObject)
-        // [a].toLowerCase()
-        // .replace(/( và| của|,|&)/gim, ""));
-        
-      // delete lawRelatedObject[Object.keys(lawRelatedObject)[a]];
 
     } else if (
       lawPairObject[
@@ -426,29 +422,34 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
       lawRelatedObject[Object.keys(lawRelatedObject)[a]] =
         lawPairObject[Object.keys(lawRelatedObject)[a]];
     } else if (Object.keys(lawRelatedObject)[a].match(/Hiến pháp/gim)) {
-      // console.log("dayActive", dayActive);
+      // console.log("Object.keys(lawRelatedObject)[a]", Object.keys(lawRelatedObject)[a]);
 
       const date = new Date(dayActive);
 
-      // console.log("date", date);
+      // console.log("lawRelatedObject", lawRelatedObject);
       if (date > new Date("2025-06-16")) {
-        lawRelatedObject[Object.keys(lawRelatedObject)[a]] =
-          "52/VBHN-VPQH(2025)";
+        lawRelatedObject["52/VBHN-VPQH(2025)"] =
+          Object.keys(lawRelatedObject)[a];
       } else if (date > new Date("2014-01-01")) {
-        lawRelatedObject[Object.keys(lawRelatedObject)[a]] = "0001/HP";
+        lawRelatedObject["0001/HP"] = Object.keys(lawRelatedObject)[a];
       } else if (date > new Date("2002-01-07")) {
-        lawRelatedObject[Object.keys(lawRelatedObject)[a]] = "0003/HP(2001)";
+        lawRelatedObject["0003/HP(2001)"] = Object.keys(lawRelatedObject)[a];
       } else if (date > new Date("1992-04-15")) {
-        lawRelatedObject[Object.keys(lawRelatedObject)[a]] = "0002/HP(1992)";
+        lawRelatedObject["0002/HP(1992)"] = Object.keys(lawRelatedObject)[a]  ;
       } else {
         lawRelatedObject[Object.keys(lawRelatedObject)[a]] = 0;
       }
+      
+      
+      // lawRelatedObject[Object.keys(lawRelatedObject)[a]] = "0002/HP(1992)"
     } else {
       lawRelatedObject[Object.keys(lawRelatedObject)[a]] = 0;
     }
 
     
   }
+  // console.log("lawRelatedObject", lawRelatedObject);
+  
   const result = Object.fromEntries(
 Object.entries(lawRelatedObject).filter(([key]) => !key.includes(' '))
 );
@@ -548,6 +549,11 @@ export function convertPartTwo(partOne, nameSign) {
       break;
     }
   }
+  // console.log('partOne',partOne);
+  // console.log('b14.match(/.{1,30}/)[0]',b14.match(/.{1,30}/)[0]);
+  let introduceText = partOne.match(new RegExp(`(.*\n)*(?=${b14.match(/.{1,30}/)[0]})`, "img"))[0];
+  // console.log('a',a);
+  
 
   let b15 = b14;
   if (b14.match(/(?<=.*\.\/\.)(\n.*)*/gim)) {
@@ -616,7 +622,7 @@ export function convertPartTwo(partOne, nameSign) {
 
   // console.log('lawRT',lawRelatedText);
   
-  return b17;
+  return {text:b17,descriptionText:introduceText};
 }
 
 export function convertPartOneOfficialDispatch(contentInputText) {
@@ -742,12 +748,10 @@ export async function convertBareTextInfo(
   } else {
     partOne = convertPartOne(inputText);
 
-    partTwo = convertPartTwo(partOne, nameSignArrayDemo);
+    partTwo = convertPartTwo(partOne, nameSignArrayDemo).text;
   }
 
-  // nameSign = nameSignArrayDemo;
   roleSign = getRoleSign(partOne, nameSignArrayDemo);
-  // console.log('nameSignArrayDemo',nameSignArrayDemo);
 
   nameSign = getArrangeUnitPublic(
     partOne,
@@ -781,6 +785,9 @@ export async function convertBareTextInfo(
   }
 
   lawDaySign = addDaysToDate(lawDaySign, 0);
+
+  lawDescription = convertPartTwo(partOne, nameSignArrayDemo).descriptionText.match(new RegExp(`(?<=ban hành )${lawKind} (.*)`, "img"))[0].replace(/\.$/gim, "").trim();
+
 
   lawInfo["lawDescription"] = lawDescription;
   lawInfo["lawNumber"] = lawNumber;
@@ -843,6 +850,10 @@ export async function getNormalTextInfo(
 
   lawDaySign = addDaysToDate(lawDaySign, 0);
 
+  lawDescription = lawRelatedText.match(new RegExp(`(?<=ban hành )${lawKind} (.*)`, "img"))[0].replace(/\.$/gim, "").trim();
+
+  // lawNameDisplay = 
+  
 
   return {
     lawInfo: {

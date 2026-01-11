@@ -81,7 +81,7 @@ export async function GET(request) {
             ? document.querySelector(".the-document-title").innerText
             : "";
       
-          lawDescription = lawDescription.replace(/^ */, "").replace(/( 2025| 2026)/g, "");
+          lawDescription = lawDescription.replace(/^ */, "").replace(/20\d{2}/g, "").trim()
           if (tableInfomation.match(/VBHN/)) {
             lawNumber = document.querySelector(
               ".div-table tr:nth-child(1) td:nth-child(2)"
