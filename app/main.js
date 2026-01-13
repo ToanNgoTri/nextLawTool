@@ -45,7 +45,7 @@ export function getRoleSign(contentRoleSign, nameSign) {
   contentRoleSign = contentRoleSign.replace(/\n\[daky\]/gim, "");
 
   let roleSign = [];
-  
+
   for (let a = 0; a < nameSign.length; a++) {
     // console.log('nameSign',nameSign);
     // console.log('contentRoleSign',contentRoleSign);
@@ -394,8 +394,8 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
     return (lawRelatedObject[law] = 0);
   });
 
-    // console.log('lawRelatedObject',lawRelatedObject);
-    
+  // console.log('lawRelatedObject',lawRelatedObject);
+
   let lawPairObject = ObjectLawPair;
   for (let a = 0; a < Object.keys(lawRelatedObject).length; a++) {
     if (
@@ -412,8 +412,6 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
             .replace(/( và| của|,|&)/gim, "")
         ]
       ] = Object.keys(lawRelatedObject)[a];
-
-
     } else if (
       lawPairObject[
         Object.keys(lawRelatedObject)[a].replace(/( và| của|,|&)/gim, "")
@@ -435,24 +433,21 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
       } else if (date > new Date("2002-01-07")) {
         lawRelatedObject["0003/HP(2001)"] = Object.keys(lawRelatedObject)[a];
       } else if (date > new Date("1992-04-15")) {
-        lawRelatedObject["0002/HP(1992)"] = Object.keys(lawRelatedObject)[a]  ;
+        lawRelatedObject["0002/HP(1992)"] = Object.keys(lawRelatedObject)[a];
       } else {
         lawRelatedObject[Object.keys(lawRelatedObject)[a]] = 0;
       }
-      
-      
+
       // lawRelatedObject[Object.keys(lawRelatedObject)[a]] = "0002/HP(1992)"
     } else {
       lawRelatedObject[Object.keys(lawRelatedObject)[a]] = 0;
     }
-
-    
   }
   // console.log("lawRelatedObject", lawRelatedObject);
-  
+
   const result = Object.fromEntries(
-Object.entries(lawRelatedObject).filter(([key]) => !key.includes(' '))
-);
+    Object.entries(lawRelatedObject).filter(([key]) => !key.includes(" "))
+  );
   return result;
 }
 
@@ -503,7 +498,7 @@ export function convertPartOne(contentInputText) {
 export function convertPartTwo(partOne, nameSign) {
   let b14 = "";
 
-      let lawRelatedText = ''
+  let lawRelatedText = "";
 
   for (let t = 0; t <= 30; t++) {
     let clause;
@@ -527,7 +522,7 @@ export function convertPartTwo(partOne, nameSign) {
     } else if (clause.match(/^(Chương|CHƯƠNG)\s(I|l|1)/gim)) {
       let firstChapter = partOne.match(/^(Chương|CHƯƠNG)\s(I|l|1).*/im)[0];
       console.log(partOne);
-      
+
       // lawRelatedText = b14.match(new RegExp(`(.*\\n)*(?=${firstChapter})`, "img"))[0]
       b14 = partOne.replace(
         new RegExp(`(.*\\n)*(?=${firstChapter})`, "img"),
@@ -538,9 +533,9 @@ export function convertPartTwo(partOne, nameSign) {
       let firstArticle = partOne.match(
         /^(Điều|Ðiều|Điều)\s(I|l|1).{0,10}/im
       )[0]; // lấy 10 ký tự thôi cho chắc
-        // console.log('partOne',partOne);
-        // console.log('firstArticle',firstArticle);
-        
+      // console.log('partOne',partOne);
+      // console.log('firstArticle',firstArticle);
+
       // lawRelatedText = partOne.match(new RegExp(`(.*\\n)*(?=${firstArticle})`, "img"))[0]
       b14 = partOne.replace(
         new RegExp(`(.*\\n)*(?=${firstArticle})`, "img"),
@@ -551,9 +546,10 @@ export function convertPartTwo(partOne, nameSign) {
   }
   // console.log('partOne',partOne);
   // console.log('b14.match(/.{1,30}/)[0]',b14.match(/.{1,30}/)[0]);
-  let introduceText = partOne.match(new RegExp(`(.*\n)*(?=${b14.match(/.{1,30}/)[0]})`, "img"))[0];
+  let introduceText = partOne.match(
+    new RegExp(`(.*\n)*(?=${b14.match(/.{1,30}/)[0]})`, "img")
+  )[0];
   // console.log('a',a);
-  
 
   let b15 = b14;
   if (b14.match(/(?<=.*\.\/\.)(\n.*)*/gim)) {
@@ -621,8 +617,8 @@ export function convertPartTwo(partOne, nameSign) {
   b17 = b17.replace(/\n*XÁC THỰC VĂN BẢN HỢP NHẤT(\n.*)*/gim, "");
 
   // console.log('lawRT',lawRelatedText);
-  
-  return {text:b17,descriptionText:introduceText};
+
+  return { text: b17, descriptionText: introduceText };
 }
 
 export function convertPartOneOfficialDispatch(contentInputText) {
@@ -651,14 +647,14 @@ export function convertPartOneOfficialDispatch(contentInputText) {
   return b13;
 }
 
-export function convertPartTwoOfficialDispatch(partOne,nameSign) {
+export function convertPartTwoOfficialDispatch(partOne, nameSign) {
   let b14 = partOne;
   let b15 = b14;
   if (b14.match(/(?<=.*\.\/\.)(\n.*)*/gim)) {
     b15 = b14.replace(/(?<=.*\.\/\.)(\n.*)*/gim, ""); //  bỏ tất cả sau ./.
   }
   // console.log(nameSign);
-  
+
   if (b14.match(/^TM\s?\./m)) {
     b15 = b15.replace(/^TM\s?.*(\n.*)*/m, "");
   } else if (b15.match(/^KT\s?\./m)) {
@@ -786,7 +782,15 @@ export async function convertBareTextInfo(
 
   lawDaySign = addDaysToDate(lawDaySign, 0);
 
-  lawDescription = convertPartTwo(partOne, nameSignArrayDemo).descriptionText.match(new RegExp(`(?<=ban hành )${lawKind} (.*)`, "img"))[0].replace(/\.$/gim, "").trim();
+  lawDescription = convertPartTwo(partOne, nameSignArrayDemo)
+    .descriptionText.match(new RegExp(`(?<=ban hành )(.*)`, "img"))[0]
+    .replace(/\.$/gim, "")
+    .trim();
+
+      lawDescription = !lawKind.match(/Luật/gim)
+    ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
+    : lawDescription;
+
 
 
   lawInfo["lawDescription"] = lawDescription;
@@ -819,7 +823,7 @@ export async function getNormalTextInfo(
 ) {
   console.log("getNormalTextInfo");
   // console.log('Đây là lawRelated',lawRelatedText);
-  
+
   nameSign = getArrangeUnitPublic(
     roleSignText,
     nameSignArrayDemo,
@@ -847,13 +851,26 @@ export async function getNormalTextInfo(
     lawNumber
   );
 
-
   lawDaySign = addDaysToDate(lawDaySign, 0);
 
-  lawDescription = lawRelatedText.match(new RegExp(`(?<=ban hành )${lawKind} (.*)`, "img"))[0].replace(/\.$/gim, "").trim();
+  // console.log("lawRelatedText", lawRelatedText);
 
-  // lawNameDisplay = 
-  
+  lawDescription = lawRelatedText
+    .match(new RegExp(`(?<=ban hành )(.*)`, "img"))[0]
+    .replace(/\.$/gim, "")
+    .trim();
+    
+
+  // console.log("lawDescription", lawDescription);
+
+  lawDescription = !lawKind.match(/Luật/gim)
+    ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
+    : lawDescription;
+
+  // lawDescription = lawDescription.replace(
+  //   /(?<!luật) số \d+\/?\d*\/QH\d{1,2}/gim,
+  //   ""
+  // );
 
   return {
     lawInfo: {

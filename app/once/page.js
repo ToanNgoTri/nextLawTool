@@ -22,9 +22,8 @@ import {
   convertContentOfficialDispatch,
   addJSONFile,
   beep,
-  Push
+  Push,
 } from "../main";
-
 
 export default function Page() {
   const [URL, setURL] = useState("");
@@ -39,6 +38,7 @@ export default function Page() {
   const [contentInputText, setContentInput] = useState("");
   const [contentOutputText, setContentOutput] = useState("");
   const [lawInfoPush, setLawInfoPush] = useState({});
+  const [lawNameDisplayText, setLawNameDisplayText] = useState("");
 
   const [fullText, setFullText] = useState("");
   const [textForMachine, setTextForMachine] = useState({});
@@ -50,7 +50,7 @@ export default function Page() {
   const searchParams = useSearchParams();
   const url = searchParams.get("URL");
 
-    const [ObjectLawPair, setObjectLawPair] = useState({});
+  const [ObjectLawPair, setObjectLawPair] = useState({});
 
   useEffect(() => {
     fetch("/api/getlawjson")
@@ -69,7 +69,6 @@ export default function Page() {
   }, []);
 
   async function receive() {
-
     fetch(`/api/url?url=${url ? url : URL}`).then((res) =>
       res.json().then((res) => {
         // console.log(res.data)
@@ -85,15 +84,14 @@ export default function Page() {
         setContentInput(res.data.content);
       })
     );
-    
   }
 
-    // useEffect(() => {
-    // if(contentInputText){
+  // useEffect(() => {
+  // if(contentInputText){
 
-    //   getInfo()
-    // }
-  
+  //   getInfo()
+  // }
+
   // }, [contentInputText])
 
   function beep() {
@@ -134,13 +132,12 @@ export default function Page() {
   let lawNameDisplay;
 
   function getValueinArea() {
-    unitPublish = unitPublishText.split(/[;]/).map(item => item.trim());
+    unitPublish = unitPublishText.split(/[;]/).map((item) => item.trim());
     lawDaySign = lawDaySignText.replace(/\s/gim, "");
 
     // nameSign = nameSignText.split(";");
-    
-    nameSign = nameSignText.split(/[;]/).map(item => item.trim());
-   
+
+    nameSign = nameSignText.split(/[;]/).map((item) => item.trim());
 
     lawDescription = lawDescriptionText;
 
@@ -151,7 +148,7 @@ export default function Page() {
     lawKind = lawKindText.replace(/(^\s*|\s*$)/gim, "");
 
     // console.log('lawDescription',lawDescription);
-    lawNameDisplay = lawDescription
+    lawNameDisplay = lawDescription;
     if (lawKind.match(/^(luật|bộ luật)/i)) {
       lawNameDisplay = lawDescription.replace(/,* của Quốc hội.*số.*/i, "");
       // lawNameDisplay = lawNameDisplay.replace(/,* số \d.*của Quốc hội.*/i, "");
@@ -160,7 +157,7 @@ export default function Page() {
         ""
       );
 
-      lawNameDisplay = lawNameDisplay + " năm " + lawDaySign.match(/\d+$/i)[0];
+      // lawNameDisplay = lawNameDisplay + " năm " + lawDaySign.match(/\d+$/i)[0];
     } else if (
       lawKind.match(/hợp nhất$/gim) &&
       lawNameDisplay.match(/(Bộ )*Luật.*/gim)
@@ -196,7 +193,7 @@ export default function Page() {
           lawNameDisplay,
           lawDescription,
           lawKind,
-          unitPublish,
+          unitPublish
         );
         setContentOutput(result.partTwo);
       } else {
@@ -210,40 +207,45 @@ export default function Page() {
           ObjectLawPair,
           lawDaySign,
           lawNameDisplay,
-          lawDescription,
+          lawDescription
         );
         // console.log('infoLaw',result);
         setContentOutput(result.partTwo);
       }
       setLawInfoPush(result.lawInfo);
 
-            let yearSign = parseInt(result.lawInfo["lawDaySign"].getYear()) + 1900;
-            let lawNumberForPush =
-              result.lawInfo["lawNumber"] +
-              (!result.lawInfo["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
-                ? "(" + yearSign + ")"
-                : "");
+      let yearSign = parseInt(result.lawInfo["lawDaySign"].getYear()) + 1900;
+      let lawNumberForPush =
+        result.lawInfo["lawNumber"] +
+        (!result.lawInfo["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
+          ? "(" + yearSign + ")"
+          : "");
 
-        
-            if (
-              ObjectLawPair[
-                lawNumberForPush.toLowerCase().replace(/( và| của|,|&)/gim, "")
-              ]
-            ) {
-              alert('đã có rồi')
-            }
-      
+      if (
+        ObjectLawPair[
+          lawNumberForPush.toLowerCase().replace(/( và| của|,|&)/gim, "")
+        ]
+      ) {
+        alert("đã có rồi");
+      }
 
-      console.log("lawDescription", result.lawInfo["lawDescription"]);
-      console.log("lawNumber", result.lawInfo["lawNumber"]);
-      console.log("lawKind", result.lawInfo["lawKind"]);
-      console.log("lawDaySign", result.lawInfo["lawDaySign"]);
-      console.log("lawDayActive", result.lawInfo["lawDayActive"]);
-      console.log("lawNameDisplay", result.lawInfo["lawNameDisplay"]);
-      console.log("lawRelated", result.lawInfo["lawRelated"]);
-      console.log("unitPublish", result.lawInfo["unitPublish"]);
-      console.log("nameSign", result.lawInfo["nameSign"]);
-      console.log("roleSign", result.lawInfo["roleSign"]);
+      setLawDescription(!result.lawInfo["lawKind"].match(/luật/img) ? result.lawInfo["lawDescription"] : result.lawInfo["lawDescription"]+ ", " + `số ${lawNumber}`) ;
+      setLawNameDisplayText(result.lawInfo["lawNameDisplay"]);
+
+      if(result.lawInfo["lawKind"].match(/luật/img)){
+        setLawNameDisplayText(result.lawInfo["lawDescription"].replace(/(?<!luật) số \d+\/?\d*\/QH\d{1,2}/gim, "") + " năm " + yearSign);
+      }
+
+      // console.log("lawDescription", result.lawInfo["lawDescription"]);
+      // console.log("lawNumber", result.lawInfo["lawNumber"]);
+      // console.log("lawKind", result.lawInfo["lawKind"]);
+      // console.log("lawDaySign", result.lawInfo["lawDaySign"]);
+      // console.log("lawDayActive", result.lawInfo["lawDayActive"]);
+      // console.log("lawNameDisplay", result.lawInfo["lawNameDisplay"]);
+      // console.log("lawRelated", result.lawInfo["lawRelated"]);
+      // console.log("unitPublish", result.lawInfo["unitPublish"]);
+      // console.log("nameSign", result.lawInfo["nameSign"]);
+      // console.log("roleSign", result.lawInfo["roleSign"]);
 
       // goToEndOutput()
       // return infoLaw;
@@ -254,18 +256,52 @@ export default function Page() {
   }
 
   async function clickToConvertContent(contentOutputText) {
-    // console.log(lawInfoPush);
-    let result
-    lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/gim)
-      ? result = convertContentOfficialDispatch(contentOutputText)
-      : result= convertContent(contentOutputText);
+    console.log('lawDayActive',lawInfoPush.lawDayActive);
+    console.log('lawDaySign',lawInfoPush.lawDaySign);
+    console.log('lawKind',lawInfoPush.lawKind);
+    console.log('lawNumber',lawInfoPush.lawNumber);
+    console.log('lawNameDisplay',lawInfoPush.lawNameDisplay);
+    console.log('lawDescription',lawInfoPush.lawDescription);
+    console.log('unitPublish',lawInfoPush.unitPublish);
+    console.log('nameSign',lawInfoPush.nameSign);
+    console.log('roleSign',lawInfoPush.roleSign);
+    console.log('lawRelated',lawInfoPush.lawRelated);
 
-      setFullText(result.fullText)
-      setTextForMachine(result.data)
-      // console.log(result.data);
-      
+    let result;
+    lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/gim)
+      ? (result = convertContentOfficialDispatch(contentOutputText))
+      : (result = convertContent(contentOutputText));
+
+    setFullText(result.fullText);
+    setTextForMachine(result.data);
+
+
   }
 
+  useEffect(() => {
+    setLawInfoPush({
+      ...lawInfoPush,
+      lawDescription: lawDescriptionText,
+      lawNameDisplay: lawNameDisplayText,
+      lawKind: lawKindText,
+      lawNumber: lawNumberText,
+    });
+
+    if(Object.keys(lawInfoPush).length > 0){
+    // console.log(lawInfoPush.lawDayActive);
+    // console.log(lawInfoPush.lawDaySign);
+    // console.log(lawInfoPush.lawKind);
+    // console.log(lawInfoPush.lawNumber);
+    // console.log(lawInfoPush.lawDescription);
+    // console.log(lawInfoPush.lawNameDisplay);
+    // console.log(lawInfoPush.unitPublish);
+    // console.log(lawInfoPush.nameSign);
+    // console.log(lawInfoPush.roleSign);
+    // console.log(lawInfoPush.lawRelated);
+
+    }
+
+  }, [lawDescriptionText, lawNameDisplayText, lawDaySignText, lawKindText, lawNumberText]);
 
   function goToStartInput() {
     window.scrollTo({
@@ -355,12 +391,19 @@ export default function Page() {
             value={nameSignText}
             onChange={(e) => setNameSign(e.target.value)}
           ></textarea>
-          <p>lawDaySign</p>
+          <p>LawDaySign</p>
           <textarea
             className={styles.input_area}
             id={styles.lawDaySign}
             value={lawDaySignText}
             onChange={(e) => setLawDaySign(e.target.value)}
+          ></textarea>
+          <p>LawNameDisplay</p>
+          <textarea
+            className={styles.input_area}
+            id={styles.lawDaySign}
+            value={lawNameDisplayText}
+            onChange={(e) => setLawNameDisplayText(e.target.value)}
           ></textarea>
           <p>lawDescription</p>
           <textarea
@@ -458,7 +501,9 @@ export default function Page() {
             className={styles.btb}
             style={{ backgroundColor: "red" }}
             onClick={() =>
-              textForMachine ? Push(textForMachine,lawInfoPush,fullText) : alert("Chưa chuyển đổi nội dung")
+              textForMachine
+                ? Push(textForMachine, lawInfoPush, fullText)
+                : alert("Chưa chuyển đổi nội dung")
             }
           >
             Push
