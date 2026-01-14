@@ -521,7 +521,7 @@ export function convertPartTwo(partOne, nameSign) {
       break;
     } else if (clause.match(/^(Chương|CHƯƠNG)\s(I|l|1)/gim)) {
       let firstChapter = partOne.match(/^(Chương|CHƯƠNG)\s(I|l|1).*/im)[0];
-      console.log(partOne);
+      // console.log(partOne);
 
       // lawRelatedText = b14.match(new RegExp(`(.*\\n)*(?=${firstChapter})`, "img"))[0]
       b14 = partOne.replace(
@@ -782,8 +782,12 @@ export async function convertBareTextInfo(
 
   lawDaySign = addDaysToDate(lawDaySign, 0);
 
+  // console.log('a',convertPartTwo(partOne, nameSignArrayDemo)
+  //   .descriptionText);
+  
+
   lawDescription = convertPartTwo(partOne, nameSignArrayDemo)
-    .descriptionText.match(new RegExp(`(?<=ban hành )(.*)`, "img"))[0]
+    .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
     .replace(/\.$/gim, "")
     .trim();
 
@@ -856,7 +860,7 @@ export async function getNormalTextInfo(
   // console.log("lawRelatedText", lawRelatedText);
 
   lawDescription = lawRelatedText
-    .match(new RegExp(`(?<=ban hành )(.*)`, "img"))[0]
+    .match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
     .replace(/\.$/gim, "")
     .trim();
     
