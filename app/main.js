@@ -793,7 +793,7 @@ export async function convertBareTextInfo(
 
       lawDescription = !lawKind.match(/Luật/gim)
     ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
-    : lawDescription;
+    : lawDescription + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "");
 
 
 
@@ -867,14 +867,9 @@ export async function getNormalTextInfo(
 
   // console.log("lawDescription", lawDescription);
 
-  lawDescription = !lawKind.match(/Luật/gim)
+      lawDescription = !lawKind.match(/Luật/gim)
     ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
-    : lawDescription;
-
-  // lawDescription = lawDescription.replace(
-  //   /(?<!luật) số \d+\/?\d*\/QH\d{1,2}/gim,
-  //   ""
-  // );
+    : lawKind + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "");
 
   return {
     lawInfo: {

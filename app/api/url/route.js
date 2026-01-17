@@ -77,11 +77,7 @@ export async function GET(request) {
           let nameSign;
           let lawDaySign;
           let lawDescription;
-          lawDescription = document.querySelector(".the-document-title")
-            ? document.querySelector(".the-document-title").innerText
-            : "";
-      
-          lawDescription = lawDescription.replace(/^ */, "").replace(/20\d{2}/g, "").trim()
+          
           if (tableInfomation.match(/VBHN/)) {
             lawNumber = document.querySelector(
               ".div-table tr:nth-child(1) td:nth-child(2)"
@@ -148,12 +144,22 @@ export async function GET(request) {
               : "";
       
             lawDaySign = document.querySelector(
-              ".div-table tr:nth-child(4) td:nth-child(2)"
+              ".div-table tr:nth-child(5) td:nth-child(2)"
             )
-              ? document.querySelector(".div-table tr:nth-child(4) td:nth-child(2)")
+              ? document.querySelector(".div-table tr:nth-child(5) td:nth-child(2)")
                   .innerText
               : "";
           }
+
+          lawDescription = document.querySelector(
+            ".div-table tr:nth-child(4) td:nth-child(2)"
+          )? document.querySelector(".div-table tr:nth-child(4) td:nth-child(2)")
+                  .innerText.trim()
+              : "";
+
+
+          
+
       
           return {
             content,

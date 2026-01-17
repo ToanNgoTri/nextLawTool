@@ -152,12 +152,12 @@ export default function Page() {
     if (lawKind.match(/^(luật|bộ luật)/i)) {
       lawNameDisplay = lawDescription.replace(/,* của Quốc hội.*số.*/i, "");
       // lawNameDisplay = lawNameDisplay.replace(/,* số \d.*của Quốc hội.*/i, "");
-      lawNameDisplay = lawNameDisplay.replace(
-        /,* số \d.*(của Quốc hội)*.*/i,
-        ""
-      );
+      // lawNameDisplay = lawNameDisplay.replace(
+      //   /,* số \d.*(của Quốc hội)*.*/i,
+      //   ""
+      // );
 
-      // lawNameDisplay = lawNameDisplay + " năm " + lawDaySign.match(/\d+$/i)[0];
+      lawNameDisplay = lawKind + " " + lawNameDisplay + " năm " + lawDaySign.match(/\d+$/i)[0];
     } else if (
       lawKind.match(/hợp nhất$/gim) &&
       lawNameDisplay.match(/(Bộ )*Luật.*/gim)
@@ -229,12 +229,14 @@ export default function Page() {
         alert("đã có rồi");
       }
 
-      setLawDescription(!result.lawInfo["lawKind"].match(/luật/img) ? result.lawInfo["lawDescription"] : result.lawInfo["lawDescription"]+ ", " + `số ${lawNumber}`) ;
-      setLawNameDisplayText(result.lawInfo["lawNameDisplay"]);
+      console.log(lawNameDisplay);
+      
+      setLawDescription(result.lawInfo["lawDescription"]) ;
+      setLawNameDisplayText(result.lawInfo["lawKind"].match(/luật/img)? lawNameDisplay : result.lawInfo["lawNameDisplay"]);
 
-      if(result.lawInfo["lawKind"].match(/luật/img)){
-        setLawNameDisplayText(result.lawInfo["lawDescription"].replace(/(?<!luật) số \d+\/?\d*\/QH\d{1,2}/gim, "") + " năm " + yearSign);
-      }
+      // if(result.lawInfo["lawKind"].match(/luật/img)){
+      //   setLawNameDisplayText(result.lawInfo["lawDescription"].replace(/(?<!luật) số \d+\/?\d*\/QH\d{1,2}/gim, "") + " năm " + yearSign);
+      // }
 
       // console.log("lawDescription", result.lawInfo["lawDescription"]);
       // console.log("lawNumber", result.lawInfo["lawNumber"]);
