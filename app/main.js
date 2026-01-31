@@ -498,10 +498,9 @@ export function convertPartOne(contentInputText) {
 export function convertPartTwo(partOne, nameSign) {
   let b14 = "";
 
-  let lawRelatedText = "";
-
   for (let t = 0; t <= 30; t++) {
     let clause;
+    
     clause = partOne.match(`(?<=(\n.*){${t}}).*`, "im")[[0]];
     if (
       lawKind ? lawKind.match(/nghị quyết/i) : partOne.match(/^nghị quyết/i)
