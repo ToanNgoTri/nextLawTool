@@ -862,13 +862,11 @@ export async function getNormalTextInfo(
     .match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
     .replace(/\.$/gim, "")
     .trim();
-    
-
-  // console.log("lawDescription", lawDescription);
+      
 
       lawDescription = !lawKind.match(/Luật/gim)
-    ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
-    : lawKind + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "");
+    ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `,'img'), "")
+    : lawKind + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `,'img'), "");
 
   return {
     lawInfo: {

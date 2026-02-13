@@ -38,12 +38,12 @@ function Page() {
 
   async function checkThongTu() {
     setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=th%C3%B4ng%20t%C6%B0&search=&search=&DocTypeIds=21&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
     );
     let a = await fetch(
       `/api/check?url=` +
         encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=th%C3%B4ng%20t%C6%B0&search=&search=&DocTypeIds=21&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
+          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
         )
     )
       .then((res) => res.json())
