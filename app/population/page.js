@@ -28,7 +28,7 @@ function Page() {
               break;
             } else if (
               item["SOHOK"] == data[b]["SOHOK"] &&
-              (data[b]["QUANHE"] == "VỢ" || data[b]["QUANHE"] == "CHỒNG") &&
+              // (data[b]["QUANHE"] == "VỢ" || data[b]["QUANHE"] == "CHỒNG") &&
               (item["TENCHA"] == item["TENCH"] ||
                 item["TENME"] == item["TENCH"] ||
                 item["TENME"] == data[b]["HOTEN"] ||
