@@ -737,13 +737,27 @@ export async function convertBareTextInfo(
   // nameSign = nameSignArrayDemo;
   let partOne, partTwo;
   if (lawNumber.match(/^\d+\/(TAND|VKS).+\-/gim)) {
+    
     partOne = convertPartOneOfficialDispatch(inputText); ////////////////////////////////////////////////////////////////////////////////////
 
     partTwo = convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo);
+
+    //   lawDescription = convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo)
+    // .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
+    // .replace(/\.$/gim, "")
+    // .trim();
+
   } else {
+
     partOne = convertPartOne(inputText);
 
     partTwo = convertPartTwo(partOne, nameSignArrayDemo).text;
+
+      lawDescription = convertPartTwo(partOne, nameSignArrayDemo)
+    .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
+    .replace(/\.$/gim, "")
+    .trim();
+
   }
 
   roleSign = getRoleSign(partOne, nameSignArrayDemo);
@@ -785,10 +799,10 @@ export async function convertBareTextInfo(
   //   .descriptionText);
   
 
-  lawDescription = convertPartTwo(partOne, nameSignArrayDemo)
-    .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
-    .replace(/\.$/gim, "")
-    .trim();
+  // lawDescription = convertPartTwo(partOne, nameSignArrayDemo)
+  //   .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
+  //   .replace(/\.$/gim, "")
+  //   .trim();
 
       lawDescription = !lawKind.match(/Luật/gim)
     ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
@@ -1330,7 +1344,7 @@ export function convertContentOfficialDispatch(contentOutputText) {
   let i4 = i3.replace(/\u00A0/gim, " ");
 
   contentText = i4;
-
+  
   if (i4.match(/(như sau|sau đây|lưu ý):\n(V|I|X)\./gm)) {
     // nếu có chương ...
     console.log("nếu có chương ...");
@@ -1706,14 +1720,14 @@ export function convertContentOfficialDispatch(contentOutputText) {
     data = [{ " ": firstOpenClause[0] }, ...data];
 
     // setTextForMachine(data);
-  } else if (i4.match(/(như sau|sau đây|lưu ý):\n(Câu )?\d+\.(.*)$/gim)) {
+  } else if (i4.match(/(như sau|sau đây|lưu ý):\n(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)) {
     /////////////////////////////////////////  // nếu chỉ có Điều ...
 
     console.log("nếu chỉ có Điều ...");
 
     let point;
-    let articleArray = i4.match(/^Câu \d+\:(.*)$/gim)
-      ? i4.match(/^Câu \d+\:(.*)$/gim)
+    let articleArray = i4.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
+      ? i4.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
       : i4.match(/^\d+(\.\d+)*\.(.*)$/gim);
     // console.log(articleArray);
 
@@ -1749,21 +1763,22 @@ export function convertContentOfficialDispatch(contentOutputText) {
         let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
         let re = new RegExp(replace, "gim");
         point = i4.match(re);
+        
       } else {
         let TemRexgexArticleB = articleArray[c];
 
-        if (articleArray[c].match(/\(/gim)) {
-          // mới thêm sau này xem có chạy được không
           TemRexgexArticleB = articleArray[c].replace(/\\/gim, "\\\\");
           TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
           TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-          TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-          TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-        }
-
+        TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
+        TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
+        console.log(TemRexgexArticleB);
+        console.log(i4);
+        
         let replace = `(?<=${TemRexgexArticleB}\n)(.*\n)*.*$`;
         let re = new RegExp(replace, "gim");
         point = i4.match(re);
+        console.log(point);
       }
       let e;
       if (point) {
@@ -1780,6 +1795,7 @@ export function convertContentOfficialDispatch(contentOutputText) {
     // console.log('data1',data);
     // setTextForMachine(data);
   } else {
+    console.log("nếu không có chương, phần, điều nào cả ...");
     data = [{ " ": i4 }];
     // setTextForMachine(data);
   }
