@@ -229,7 +229,7 @@ export default function Page() {
         alert("đã có rồi");
       }
 
-      console.log(lawNameDisplay);
+      // console.log(lawNameDisplay);
       
       setLawDescription(result.lawInfo["lawDescription"]) ;
       setLawNameDisplayText(result.lawInfo["lawKind"].match(/luật/img)? lawNameDisplay : result.lawInfo["lawNameDisplay"]);

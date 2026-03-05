@@ -804,10 +804,16 @@ export async function convertBareTextInfo(
   //   .replace(/\.$/gim, "")
   //   .trim();
 
-      lawDescription = !lawKind.match(/Luật/gim)
-    ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
-    : lawDescription + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "");
+    //   lawDescription = !lawKind.match(/Luật/gim)
+    // ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
+    // : lawDescription + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "");
 
+    // console.log('lawDaySign', typeof lawDaySign);
+    
+      lawDescription = lawKind.match(/Luật/gim)
+    ? lawDescription+" số " + lawNumber 
+    : lawNumber.match(/VBHN/gim)? lawKind+' số '+lawNumber+' năm ' + lawDaySign.getFullYear() + ' của ' +unitPublish[0] + ' ban hành '+ lawNameDisplay.replace(/ hợp nhất năm.*/, "")
+    : lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
 
 
   lawInfo["lawDescription"] = lawDescription;
@@ -877,10 +883,12 @@ export async function getNormalTextInfo(
     .replace(/\.$/gim, "")
     .trim();
       
+    console.log('lawDescription', lawDescription);
 
-      lawDescription = !lawKind.match(/Luật/gim)
-    ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `,'img'), "")
-    : lawKind + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `,'img'), "");
+      lawDescription = lawKind.match(/Luật/gim)
+    ? lawDescription+" số " + lawNumber 
+    : lawNumber.match(/VBHN/gim)? lawKind+' số '+lawNumber+' năm ' + lawDaySign.getFullYear() + ' của ' +unitPublish[0] + ' ban hành '+ lawNameDisplay.replace(/ hợp nhất năm.*/, "")
+    : lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
 
   return {
     lawInfo: {
