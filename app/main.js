@@ -133,14 +133,14 @@ export function getLawDayActive(text, daySign) {
     )[0];
     let countDaysAfter = lawDayActive.match(/\d+/gim)[0];
     lawDayActive = addDaysToDate(daySign, parseInt(countDaysAfter));
-    console.log(3);
+    // console.log(3);
   } else if (
     text.match(
       // /(?<=^(Điều|Ðiều|Điều) \d.*(Hiệu lực|thi hành|thực hiện).*\n).*(có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực).* từ ngày k/im
       /(LUẬT|BỘ LUẬT|NGHỊ ĐỊNH|Nghị định|THÔNG TƯ|NGHỊ QUYẾT|THÔNG TƯ LIÊN TỊCH|QUYẾT ĐỊNH|PHÁP LỆNH|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|HIẾN PHÁP)(\s(này|này))?.{0,19}(có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực).{0,19}từ ngày (k|ban hành)/im
     )
   ) {
-    console.log(1);
+    // console.log(1);
 
     lawDayActive = addDaysToDate(daySign, 0);
   } else if (
@@ -155,7 +155,7 @@ export function getLawDayActive(text, daySign) {
         /(?<=(LUẬT|BỘ LUẬT|NGHỊ ĐỊNH|Nghị định|THÔNG TƯ|NGHỊ QUYẾT|THÔNG TƯ LIÊN TỊCH|QUYẾT ĐỊNH|PHÁP LỆNH|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|HIẾN PHÁP|Quy chuẩn kỹ thuật|Định mức)(\s(này|này))?.{0,100}( và )?(có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực|có hiệu lực)[^\d]{0,19})(ngày|ngày)\s*\d*\s*(tháng|tháng)\s*\d*\s*năm\s*\d*/gim
       ).length - 1
     ];
-    console.log(2);
+    // console.log(2);
     let RemoveDay = lawDayActiveDemo.replace(/(ngày|ngày) */im, "");
     let RemoveMonth = RemoveDay.replace(/ *(tháng|tháng) */im, "/");
     lawDayActive = addDaysToDate(RemoveMonth.replace(/ *năm */im, "/"), 0);
@@ -172,7 +172,7 @@ export function getLawDayActive(text, daySign) {
 
     lawDayActive = addDaysToDate(lawDayActive, 0);
   } else {
-    console.log(4);
+    // console.log(4);
     lawDayActive = null;
   }
 
@@ -883,7 +883,7 @@ export async function getNormalTextInfo(
     .replace(/\.$/gim, "")
     .trim();
       
-    console.log('lawDescription', lawDescription);
+    // console.log('lawDescription', lawDescription);
 
       lawDescription = lawKind.match(/Luật/gim)
     ? lawDescription+" số " + lawNumber 
