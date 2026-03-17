@@ -438,7 +438,7 @@ export default function Page() {
             ref={inputArea}
           ></textarea>
         </div>
-        <div className={styles.navi_container} style={{ left: 566 }}>
+        <div className={styles.navi_container} style={{ left: 460 }}>
           <button
             type="button"
             className={styles.navi_btb}
