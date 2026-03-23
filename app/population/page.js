@@ -9,140 +9,120 @@ function Page() {
       res.json().then((res) => {
         data = res.data;
 
-        // for(let a = 0 ; a < data.length ; a++){
 
-        // }
+const parseDate = (d) => {
+  if (!d) return null;
+  const [day, month, year] = d.split("/");
+  return new Date(year, month - 1, day);
+};
 
-        for (let a = 0; a < data.length; a++) {
-          let item = data[a];
+// 🔥 dùng OR
+const sameParents = (a, b) => {
+  return (
+    (a["TENCHA"] && a["TENCHA"] === b["TENCHA"]) ||
+    (a["TENME"] && a["TENME"] === b["TENME"])
+  );
+};
 
-          for (let b = 0; b < data.length; b++) {
-            // const [day1, month1, year1] = data[b]["NAMSINH"].split("/");
-            // const dateB = new Date(year1, month1 - 1, day1);
+const isChildOf = (child, parent) => {
+  return (
+    child["TENCHA"] === parent["HOTEN"] ||
+    child["TENME"] === parent["HOTEN"]
+  );
+};
 
-            // const [day2, month2, year2] = item["NAMSINH"].split("/");
-            // const dateA = new Date(year2, month2 - 1, day2);
+function assignQuanHe(data) {
+  const chuHo = data.find(x => x["QUANHE"] === "CH");
+  if (!chuHo) return data;
 
-            if (item["QUANHE"] == "CH") {
-              item["QUANHE"] = "CH";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              // (data[b]["QUANHE"] == "VỢ" || data[b]["QUANHE"] == "CHỒNG") &&
-              (item["TENCHA"] == item["TENCH"] ||
-                item["TENME"] == item["TENCH"] ||
-                item["TENME"] == data[b]["HOTEN"] ||
-                item["TENCHA"] == data[b]["HOTEN"])
-            ) {
-              item["QUANHE"] = "CON";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CON" &&
-              (item["TENCHA"] == data[b]["HOTEN"] ||
-                item["TENME"] == data[b]["HOTEN"])
-            ) {
-              item["QUANHE"] = "CHÁU";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CON" &&
-              item["HOTEN"] == data[b]["TENME"]
-            ) {
-              item["QUANHE"] = "VỢ";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CON" &&
-              item["HOTEN"] == data[b]["TENCHA"]
-            ) {
-              item["QUANHE"] = "CHỒNG";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              (data[b]["QUANHE"] == "EM" ||
-                data[b]["QUANHE"] == "CHỊ" ||
-                data[b]["QUANHE"] == "ANH") &&
-              (item["TENCHA"] == data[b]["HOTEN"] ||
-                item["TENME"] == data[b]["HOTEN"])
-            ) {
-              item["QUANHE"] = "CHÁU";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CH" &&
-              item["HOTEN"] == data[b]["TENCHA"]
-            ) {
-              item["QUANHE"] = "CHA";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CH" &&
-              item["HOTEN"] == data[b]["TENME"]
-            ) {
-              item["QUANHE"] = "MẸ";
-              break;
-            }else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CH" &&
-              item["GIOITINH"] == "TRUE" &&
-              (item["TENCHA"] == data[b]["TENCHA"] ||
-                item["TENME"] == data[b]["TENME"]) &&
-              new Date(
-                item["NAMSINH"].split("/")[2],
-                item["NAMSINH"].split("/")[1] - 1,
-                item["NAMSINH"].split("/")[0]
-              ) <
-                new Date(
-                  data[b]["NAMSINH"].split("/")[2],
-                  data[b]["NAMSINH"].split("/")[1] - 1,
-                  data[b]["NAMSINH"].split("/")[0]
-                )
-            ) {
-              item["QUANHE"] = "ANH";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CH" &&
-              item["GIOITINH"] == "FALSE" &&
-              (item["TENCHA"] == data[b]["TENCHA"] ||
-                item["TENME"] == data[b]["TENME"]) &&
-              new Date(
-                item["NAMSINH"].split("/")[2],
-                item["NAMSINH"].split("/")[1] - 1,
-                item["NAMSINH"].split("/")[0]
-              ) <
-                new Date(
-                  data[b]["NAMSINH"].split("/")[2],
-                  data[b]["NAMSINH"].split("/")[1] - 1,
-                  data[b]["NAMSINH"].split("/")[0]
-                )            ) {
-              item["QUANHE"] = "CHỊ";
-              break;
-            } else if (
-              item["SOHOK"] == data[b]["SOHOK"] &&
-              data[b]["QUANHE"] == "CH" &&
-              (item["TENCHA"] == data[b]["TENCHA"] ||
-                item["TENME"] == data[b]["TENME"]) &&
-              new Date(
-                item["NAMSINH"].split("/")[2],
-                item["NAMSINH"].split("/")[1] - 1,
-                item["NAMSINH"].split("/")[0]
-              ) >
-                new Date(
-                  data[b]["NAMSINH"].split("/")[2],
-                  data[b]["NAMSINH"].split("/")[1] - 1,
-                  data[b]["NAMSINH"].split("/")[0]
-                )            ) {
-              item["QUANHE"] = "EM";
-              break;
-            } 
-          }
+  // ===== B1: CHA / MẸ =====
+  data.forEach(item => {
+    if (item === chuHo) return;
 
-          data[a] = item;
-        }
+    if (item["HOTEN"] === chuHo["TENCHA"]) {
+      item["QUANHE"] = "CHA";
+    } else if (item["HOTEN"] === chuHo["TENME"]) {
+      item["QUANHE"] = "MẸ";
+    }
+  });
 
-        console.log(data);
+  // ===== B2: CON (ưu tiên cao nhất) =====
+  data.forEach(item => {
+    if (item["QUANHE"]) return;
+
+    if (
+      isChildOf(item, chuHo) ||
+      (item["TENCHA"] === chuHo["TENVO"] ||
+        item["TENME"] === chuHo["TENVO"] ||
+        item["TENCHA"] === chuHo["TENCHONG"] ||
+        item["TENME"] === chuHo["TENCHONG"])
+    ) {
+      item["QUANHE"] = "CON";
+    }
+  });
+
+  // ===== B3: VỢ / CHỒNG =====
+  data.forEach(item => {
+    if (item["QUANHE"]) return;
+
+    if (
+      data.some(
+        x =>
+          x["QUANHE"] === "CON" &&
+          (item["HOTEN"] === x["TENCHA"] ||
+            item["HOTEN"] === x["TENME"])
+      )
+    ) {
+      item["QUANHE"] =
+        item["GIOITINH"] === "TRUE" ? "CHỒNG" : "VỢ";
+    }
+  });
+
+  // ===== B4: ANH / CHỊ / EM (dùng OR) =====
+  const children = data.filter(x => x["QUANHE"] === "CON");
+
+  children.forEach(a => {
+    children.forEach(b => {
+      if (a === b) return;
+      if (!sameParents(a, b)) return;
+
+      const dateA = parseDate(a["NAMSINH"]);
+      const dateB = parseDate(b["NAMSINH"]);
+
+      if (!dateA || !dateB) return;
+
+      if (dateA < dateB) {
+        a["QUANHE"] =
+          a["GIOITINH"] === "TRUE" ? "ANH" : "CHỊ";
+      } else if (dateA > dateB) {
+        a["QUANHE"] = "EM";
+      }
+    });
+  });
+
+  // ===== B5: CHÁU =====
+  data.forEach(item => {
+    if (item["QUANHE"]) return;
+
+    if (
+      data.some(
+        x =>
+          x["QUANHE"] === "CON" &&
+          (item["TENCHA"] === x["HOTEN"] ||
+            item["TENME"] === x["HOTEN"])
+      )
+    ) {
+      item["QUANHE"] = "CHÁU";
+    }
+  });
+
+  return data;
+}
+
+        dataDone = assignQuanHe(data);
+        console.log(dataDone);
+        
+
       });
     });
   }, []);
