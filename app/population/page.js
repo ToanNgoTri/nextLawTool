@@ -31,10 +31,10 @@ function Page() {
               // (data[b]["QUANHE"] == "VỢ" || data[b]["QUANHE"] == "CHỒNG") &&
               (item["TENCHA"] == item["TENCH"] ||
                 item["TENME"] == item["TENCH"] ||
-                data[b]["QUANHE"] == "VỢ" ||
-                item["TENME"] == data[b]["HOTEN"] ||
-                data[b]["QUANHE"] == "CHA" ||
-                item["TENCHA"] == data[b]["HOTEN"])
+                (data[b]["QUANHE"] == "VỢ" &&
+                item["TENME"] == data[b]["HOTEN"]) ||
+                (data[b]["QUANHE"] == "CHỒNG" &&
+                item["TENCHA"] == data[b]["HOTEN"]))
             ) {
               item["QUANHE"] = "CON";
               break;
