@@ -7,7 +7,12 @@ export async function GET(request) {
   const url = searchParams.get("url");
 
   async function checkNonExistLaw(url) {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({
+      headless: false,
+      executablePath:
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(50000);
 
@@ -18,38 +23,42 @@ export async function GET(request) {
     const r = await page.evaluate(async () => {
       let doc_title = document.querySelectorAll(".doc-title a");
       let content = {};
-      
+
+      console.log("FOUND:", doc_title.length);
+
       doc_title.forEach((item) => {
-          console.log('item',item);
+        console.log("item", item);
 
         let lawTitelForCheck = "";
         // if (item.innerText.match(/(\d+\/?\d*\/QH\d{1,2}|VBHN\-VPQH)/)) {
-        if (item.innerText.replace(':',"").match(/((?<= )\d*\/\D{1,8}\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/img)) {
-
-          let LawNumber = item.innerText.replace(':',"").match(
-            /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/
-          )[0];
-          let yearSign = item.innerText.replace(':',"").match(
-            /20\d{2}/
-          )[0];
+        if (
+          item.innerText
+            .replace(":", "")
+            .match(
+              /((?<= )\d*\/\D{1,8}\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/gim,
+            )
+        ) {
+          let LawNumber = item.innerText
+            .replace(":", "")
+            .match(
+              /((?<= )\d*\/\D+\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/,
+            )[0];
+          let yearSign = item.innerText.replace(":", "").match(/20\d{2}/)[0];
 
           lawTitelForCheck = LawNumber + "(" + yearSign + ")";
-          console.log('lawTitelForCheck',lawTitelForCheck);
-
+          console.log("lawTitelForCheck", lawTitelForCheck);
         } else if (
-          item.innerText.replace(':',"").match(
-            /(\d+\/\d*\/\S+\-?[^ |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/
-          )
+          item.innerText
+            .replace(":", "")
+            .match(/(\d+\/\d*\/\S+\-?[^ |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/)
         ) {
-          lawTitelForCheck = item.innerText.replace(':',"").match(
-            /(\d+\/\d*\/\S+\-?[^ |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/
-          )[0];
-          console.log('lawTitelForCheck2',lawTitelForCheck);
-          
-        } else {
           lawTitelForCheck = item.innerText
-         console.log('lawTitelForCheck3',lawTitelForCheck);
-
+            .replace(":", "")
+            .match(/(\d+\/\d*\/\S+\-?[^ |\:|\"|\'|\;|\{|\}|”)]+)(?=\b)/)[0];
+          console.log("lawTitelForCheck2", lawTitelForCheck);
+        } else {
+          lawTitelForCheck = item.innerText;
+          console.log("lawTitelForCheck3", lawTitelForCheck);
         }
         content[lawTitelForCheck] = item.href;
         // }
@@ -66,19 +75,15 @@ export async function GET(request) {
 
   let ObjectLaw = await checkNonExistLaw(url);
   // console.log('ObjectLaw',ObjectLaw);
-  
 
   let content = {};
 
   let lawPairObject = await JSON.parse(
-    fs.readFileSync("app/asset/ObjectLawPair.json", "utf8")
+    fs.readFileSync("app/asset/ObjectLawPair.json", "utf8"),
   );
-  
-  
+
   for (let a = 0; a < Object.keys(ObjectLaw["content"]).length; a++) {
-    if (
-      !lawPairObject[Object.keys(ObjectLaw["content"])[a]] 
-    ) {
+    if (!lawPairObject[Object.keys(ObjectLaw["content"])[a]]) {
       content[Object.keys(ObjectLaw["content"])[a]] =
         ObjectLaw["content"][Object.keys(ObjectLaw["content"])[a]];
     }
