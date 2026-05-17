@@ -159,7 +159,7 @@ export async function GET(request) {
           lawDescription = document.querySelector(
             ".div-table tr:nth-child(4) td:nth-child(2)"
           )? document.querySelector(".div-table tr:nth-child(4) td:nth-child(2)")
-                  .innerText.trim()
+                  .innerText.trim().replace(/Sửa đổi/, "sửa đổi")
               : "";
 
 

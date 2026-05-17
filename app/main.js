@@ -858,8 +858,8 @@ export async function getNormalTextInfo(
   nameSignArrayDemo,
   ObjectLawPair,
   lawDaySign,
-  lawNameDisplay,
-  lawDescription,
+  lawNameDisplay,   // lấy từ phần tổng quan trong luatvietnam
+  lawDescription,   // lawDescription lấy từ phần cuối giới thiệu phần đầu trong luật
   lawKind,
   unitPublishAray,
   lawRelated,

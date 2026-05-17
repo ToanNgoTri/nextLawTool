@@ -234,23 +234,6 @@ export default function Page() {
       setLawDescription(result.lawInfo["lawDescription"]) ;
       setLawNameDisplayText(result.lawInfo["lawKind"].match(/luật/img)? lawNameDisplay : result.lawInfo["lawNameDisplay"]);
 
-      // if(result.lawInfo["lawKind"].match(/luật/img)){
-      //   setLawNameDisplayText(result.lawInfo["lawDescription"].replace(/(?<!luật) số \d+\/?\d*\/QH\d{1,2}/gim, "") + " năm " + yearSign);
-      // }
-
-      // console.log("lawDescription", result.lawInfo["lawDescription"]);
-      // console.log("lawNumber", result.lawInfo["lawNumber"]);
-      // console.log("lawKind", result.lawInfo["lawKind"]);
-      // console.log("lawDaySign", result.lawInfo["lawDaySign"]);
-      // console.log("lawDayActive", result.lawInfo["lawDayActive"]);
-      // console.log("lawNameDisplay", result.lawInfo["lawNameDisplay"]);
-      // console.log("lawRelated", result.lawInfo["lawRelated"]);
-      // console.log("unitPublish", result.lawInfo["unitPublish"]);
-      // console.log("nameSign", result.lawInfo["nameSign"]);
-      // console.log("roleSign", result.lawInfo["roleSign"]);
-
-      // goToEndOutput()
-      // return infoLaw;
     } catch (e) {
       beep();
       console.log(e);
@@ -290,16 +273,6 @@ export default function Page() {
     });
 
     if(Object.keys(lawInfoPush).length > 0){
-    // console.log(lawInfoPush.lawDayActive);
-    // console.log(lawInfoPush.lawDaySign);
-    // console.log(lawInfoPush.lawKind);
-    // console.log(lawInfoPush.lawNumber);
-    // console.log(lawInfoPush.lawDescription);
-    // console.log(lawInfoPush.lawNameDisplay);
-    // console.log(lawInfoPush.unitPublish);
-    // console.log(lawInfoPush.nameSign);
-    // console.log(lawInfoPush.roleSign);
-    // console.log(lawInfoPush.lawRelated);
 
     }
 
