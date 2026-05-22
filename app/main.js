@@ -48,14 +48,18 @@ export function getRoleSign(contentRoleSign, nameSign) {
 
   for (let a = 0; a < nameSign.length; a++) {
     // console.log('nameSign',nameSign);
-    // console.log('contentRoleSign',contentRoleSign);
+    
+    contentRoleSign = contentRoleSign.replace(/(\n|\t)+/gim, "\n");
 
     let roleSignString = contentRoleSign
       .match(new RegExp(`.*(?=\n.*${nameSign[a]})`, "img"))[0]
       .toLowerCase(); //key.charAt(0).toUpperCase() + key.slice(1);
+      
 
     roleSignString =
       roleSignString.charAt(0).toUpperCase() + roleSignString.slice(1);
+
+      
     if (roleSignString.match(/^phó/i)) {
       roleSignString =
         "Phó " +
@@ -69,6 +73,8 @@ export function getRoleSign(contentRoleSign, nameSign) {
     roleSignString = roleSignString.replace(/\s/gm, " ");
     roleSign.push(roleSignString);
   }
+  // console.log('roleSign', roleSign);
+  
   return roleSign;
 }
 
@@ -80,7 +86,8 @@ export function getArrangeUnitPublic(
 ) {
   let nameSign = [];
   let unitPbDemo = [];
-
+  // console.log('roleSignString', roleSignString);
+  
   nameSignArrayDemo.map((nameSignDemo, i) => {
     let nameSignString = roleSignString.match(
       new RegExp(`.*${nameSignDemo}.*`, "img"),
