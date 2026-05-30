@@ -51,6 +51,7 @@ export function getRoleSign(contentRoleSign, nameSign) {
     
     contentRoleSign = contentRoleSign.replace(/(\n|\t)+/gim, "\n");
 
+    // console.log(contentRoleSign,nameSign[a])
     let roleSignString = contentRoleSign
       .match(new RegExp(`.*(?=\n.*${nameSign[a]})`, "img"))[0]
       .toLowerCase(); //key.charAt(0).toUpperCase() + key.slice(1);
@@ -1377,164 +1378,205 @@ export function convertContent(contentOutputText) {
 export function convertContentOfficialDispatch(contentOutputText) {
   console.log("convertContentOfficialDispatch");
 
-  let data = [];
+  // ─── Helper: escape special regex chars ───────────────────────────────────
+  function escapeRegex(str) {
+    return str
+      .replace(/\\/gm, "\\\\")
+      .replace(/\(/gim, "\\(")
+      .replace(/\)/gim, "\\)")
+      .replace(/\./gim, "\\.")
+      .replace(/\?/gim, "\\?");
+  }
 
+  // ─── Helper: lấy nội dung giữa articleA và articleB (hoặc đến cuối) ───────
+  function getContentBetween(text, keyA, keyB = null) {
+    const eA = escapeRegex(keyA);
+    const pattern = keyB
+      ? `(?<=${eA}\n)(.*\n)*(?=${escapeRegex(keyB)})`
+      : `(?<=${eA}\n)(.*\n)*.*$`;
+    const re = new RegExp(pattern, keyB ? "gim" : "gim");
+    const match = text.match(re);
+    if (!match) return "";
+    return match[0].replace(/\n+$/, "").replace(/^\n+/, "");
+  }
+
+  // Helper: lọc các dòng KHÔNG nằm trong quoted block
+  // Duyệt từng dòng, theo dõi trạng thái "đang trong trích dẫn".
+  // Hỗ trợ: " " (thẳng), “ ” (cong), „ ‟ (low-high)
+  function stripQuotedBlocks(text) {
+    // Chiến lược: duyệt từng dòng, theo dõi trạng thái insideQuote.
+    // Dấu quote thẳng ": đếm số lượng trong dòng.
+    //   - Nếu ĐANG NGOÀI block: lẻ = mở block (chưa đóng trên dòng này)
+    //   - Nếu ĐANG TRONG block: lẻ = đóng block (dòng này là dòng đóng)
+    // Dấu quote cong “”: rõ ràng mở/đóng riêng biệt.
+    const lines = text.split('\n');
+    let insideQuote = false;
+    const result = [];
+
+    for (const line of lines) {
+      const curlyOpen  = (line.match(/[“„]/g) || []).length;
+      const curlyClose = (line.match(/[”‟]/g) || []).length;
+      const straight   = (line.match(/"/g) || []).length;
+
+      if (insideQuote) {
+        // --- Đang trong block quote ---
+        // Kiểm tra dòng này có đóng block không
+        const closedByCurly = curlyClose > 0;
+        // Với dấu thẳng: lẻ = đóng block (vì ta vào với 1 dấu mở, dấu lẻ này là dấu đóng)
+        const closedByStraight = straight % 2 !== 0;
+        if (closedByCurly || closedByStraight) insideQuote = false;
+        continue; // luôn bỏ dòng đang trong quote (kể cả dòng đóng)
+      }
+
+      // --- Đang ngoài block quote ---
+      const opensByCurly = curlyOpen > curlyClose; // có curly mở chưa đóng cùng dòng
+      // Với dấu thẳng: lẻ = có dấu mở chưa đóng cùng dòng
+      const opensByStraight = (straight % 2 !== 0) && curlyOpen === 0;
+
+      if (opensByCurly) {
+        // Giữ phần trước dấu mở curly
+        const openIdx = line.search(/[“„]/);
+        const before = line.slice(0, openIdx).trimEnd();
+        if (before) result.push(before);
+        insideQuote = true;
+      } else if (opensByStraight) {
+        // Giữ phần trước dấu " đầu tiên lẻ (dấu mở block)
+        const openIdx = line.indexOf('"');
+        const before = line.slice(0, openIdx).trimEnd();
+        if (before) result.push(before);
+        insideQuote = true;
+      } else {
+        // Không có block mở → giữ nguyên dòng
+        result.push(line);
+      }
+    }
+    return result.join('\n');
+  }
+
+  // ─── Helper: lọc articleArray, gom sub-item vào key cha ──────────────────
+  // Logic:
+  //   - Nếu TẤT CẢ items đều là top-level (1. 2. 3.) → giữ tất cả
+  //   - Nếu TẤT CẢ items đều là sub-item (9.1. 9.2.) → giữ tất cả
+  //   - Nếu CHỈ CÓ top-level (không có sub-item) → giữ tất cả
+  //   - Nếu HỖN HỢP top-level + sub-item (1. 2. 2.1. 2.2. 3.) → bỏ sub-item, giữ top-level
+  //     VD: [1., 2., 2.1., 2.2., 3.] → [1., 2., 3.] vì 2.1/2.2 nằm trong 2.
+  //   - ĐẶC BIỆT: nếu hỗn hợp mà sub-item có BASE KHÁC top-level (9.2. + 10.) → giữ tất cả
+  function filterTopLevelArticles(articleArray) {
+    if (!articleArray || articleArray.length === 0) return [];
+    const subItems = articleArray.filter(item => item.match(/^\d+\.\d+/));
+    const topItems = articleArray.filter(item => !item.match(/^\d+\.\d+/));
+    // Không có sub-item → giữ nguyên
+    if (subItems.length === 0) return articleArray;
+    // Không có top-item → toàn sub-item → giữ nguyên
+    if (topItems.length === 0) return articleArray;
+    // Hỗn hợp: kiểm tra xem sub-item có cùng BASE với top-item không
+    // VD: [1., 2., 2.1., 2.2.] → sub (2.1,2.2) có base=2, top có 2. → cùng base → filter sub
+    // VD: [9.2., 10.] → sub (9.2) base=9, top (10) base=10 → khác base → giữ tất cả
+    const topBases = new Set(topItems.map(item => item.match(/^(\d+)[.:]/)?.[1]));
+    const subBases = subItems.map(item => item.match(/^(\d+)/)?.[1]);
+    const allSubHaveMatchingTop = subBases.every(base => topBases.has(base));
+    if (allSubHaveMatchingTop) {
+      // Sub-item có top-level tương ứng → bỏ sub-item (chúng sẽ nằm trong value của top)
+      return topItems;
+    }
+    // Sub-item không có top-level tương ứng → giữ tất cả
+    return articleArray;
+  }
+
+  // ─── Normalize input ──────────────────────────────────────────────────────
   let input = contentOutputText;
-
   let i1 = input.replace(/^Câu( |\u00A0)+(\d+\w?)\.(.*)/gim, "Câu $2:$3");
-
   let i2 = i1.replace(/­/gm, "");
-
-  let i3 = i2.replace(/\[\d*\]/gim, ""); // bỏ chỉ mục
-
+  let i3 = i2.replace(/\[\d*\]/gim, "");
   let i4 = i3.replace(/\u00A0/gim, " ");
 
   contentText = i4;
 
+  let data = [];
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // NHÁNH 1: Có chương (I. II. III. ...)
+  // ══════════════════════════════════════════════════════════════════════════
   if (i4.match(/(như sau|sau đây|lưu ý):\n(V|I|X)\./gm)) {
-    // nếu có chương ...
     console.log("nếu có chương ...");
 
-    let chapterArray; // lấy riêng lẻ từng chương thành 1 array
-    if (i4.match(/^(V|I|X)*\./gm)) {
-      chapterArray = i4.match(/^(V|I|X)*\..*/gm);
-    } else {
-      chapterArray = null;
-    }
+    let chapterArray = i4.match(/^(V|I|X)*\./gm)
+      ? i4.match(/^(V|I|X)*\..*/gm)
+      : null;
 
-    let chapterArray0 = chapterArray[0].replace(/\\/gim, "\\\\");
-    chapterArray0 = chapterArray0.replace(/\(/gim, "\\(");
-    chapterArray0 = chapterArray0.replace(/\)/gim, "\\)");
-    chapterArray0 = chapterArray0.replace(/\./gim, "\\.");
-    chapterArray0 = chapterArray0.replace(/\?/gim, "\\?");
-    let firstOpenClause = i4.match(
-      new RegExp(`(.*\n)*.*\n*(?=\n${chapterArray0})`, "img"),
+    const firstOpenClause = i4.match(
+      new RegExp(`(.*\n)*.*\n*(?=\n${escapeRegex(chapterArray[0])})`, "img"),
     );
-    // console.log('firstOpenClause',firstOpenClause);
 
-    let articleArray; // lấy khoảng giữa các chương
-    let allArticle = []; // lấy riêng lẻ các điều
+    let allArticle = [];
     let point = [];
     let d = -1;
 
-    for (var a = 0; a < chapterArray.length; a++) {
-      articleArray = [];
+    for (let a = 0; a < chapterArray.length; a++) {
+      let articleArray = [];
 
+      // Lấy nội dung trong chương a
       if (a < chapterArray.length - 1) {
-        let chapterArrayA = chapterArray[a].replace(/\\/gim, "\\\\");
-        chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
-        chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
-        chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
-
-        let chapterArrayB = chapterArray[a + 1].replace(/\\/gim, "\\\\");
-        chapterArrayB = chapterArrayB.replace(/\(/gim, "\\(");
-        chapterArrayB = chapterArrayB.replace(/\)/gim, "\\)");
-        chapterArrayB = chapterArrayB.replace(/\?/gim, "\\?");
-
-        let replace = `(?<=${chapterArrayA}\n)(.*\n)*(?=${chapterArrayB})`;
-        let re = new RegExp(replace, "gim");
+        const re = new RegExp(
+          `(?<=${escapeRegex(chapterArray[a])}\n)(.*\n)*(?=${escapeRegex(chapterArray[a + 1])})`,
+          "gim",
+        );
         articleArray = i4.match(re);
       } else {
-        let chapterArrayA = chapterArray[a].replace(/\\/gim, "\\\\");
-        chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
-        chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
-        chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
-        // console.log('chapterArrayA',chapterArrayA);
-        // console.log('i4',i4);
-
-        let replace = `((?<=${chapterArrayA}))((\n.*)*)$`;
-        let re = new RegExp(replace, "gim");
+        const re = new RegExp(
+          `((?<=${escapeRegex(chapterArray[a])}))((\\n.*)*)$`,
+          "gim",
+        );
         articleArray = i4.match(re);
       }
-      // console.log('articleArray',articleArray);
-      // console.log('chapterArray',chapterArray);
 
       data[a] = { [chapterArray[a]]: [] };
-      if (
-        articleArray[0].match(/^Câu \d+\:(.*)$/gim) ||
-        articleArray[0].match(/^Câu \d+\:(.*)$/gim) ||
-        articleArray[0].match(/^\d+(\.\d+)*\.(.*)$/gim)
-      ) {
-        allArticle.push(
-          articleArray[0].match(/^Câu \d+\:(.*)$/gim)
-            ? articleArray[0].match(/^Câu \d+\:(.*)$/gim)
-            : articleArray[0].match(/^\d+(\.\d+)*\.(.*)$/gim),
-        );
-        // console.log('allArticle',allArticle);
+
+      // Lấy danh sách article trong chương, lọc bỏ sub-item
+      let rawArticles = articleArray[0].match(/^Câu \d+\:(.*)$/gim)
+        ? articleArray[0].match(/^Câu \d+\:(.*)$/gim)
+        : articleArray[0].match(/^\d+(\.\d+)*\.(.*)$/gim);
+
+      let topArticles = filterTopLevelArticles(rawArticles);
+
+      if (topArticles && topArticles.length > 0) {
+        allArticle.push(topArticles);
       } else {
-        // data[a] = { [chapterArray[a]]: [] };
-        allArticle.push();
+        allArticle.push(undefined);
       }
 
-      // console.log('allArticle[a]',allArticle[a]);
-
-      // allArticle[a] = RemoveNoOrder(allArticle[a]);
-
       if (allArticle[a]) {
-        let countArticle = allArticle[a].length;
+        const countArticle = allArticle[a].length;
         for (let b = 0; b < countArticle; b++) {
-          let TemRexgexArticleA = allArticle[a][b];
+          const keyA = allArticle[a][b];
+          const keyB = b < countArticle - 1 ? allArticle[a][b + 1] : null;
 
-          TemRexgexArticleA = allArticle[a][b].replace(/\\/gm, "\\\\");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
-
-          if (b < countArticle - 1) {
-            let TemRexgexArticleB = allArticle[a][b + 1];
-
-            TemRexgexArticleB = allArticle[a][b + 1].replace(/\\/gm, "\\\\");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-            // console.log('TemRexgexArticleA',TemRexgexArticleA);
-            // console.log('TemRexgexArticleB',TemRexgexArticleB);
-            let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
-            let re = new RegExp(replace, "gim");
-
-            if (articleArray[0].match(re)) {
-              let e = articleArray[0].match(re)[0];
-              e = articleArray[0].match(re)[0].replace(/\n+$/, "");
-              e = e.replace(/^\n+/, "");
-
-              point.push(e);
-            } else {
-              point.push([""]);
+          let e = "";
+          if (keyB) {
+            const re = new RegExp(
+              `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
+              "gim",
+            );
+            const match = articleArray[0].match(re);
+            if (match) {
+              e = match[0].replace(/\n+$/, "").replace(/^\n+/, "");
             }
           } else {
-            let TemRexgexArticleB = allArticle[a][b];
-
-            TemRexgexArticleB = allArticle[a][b].replace(/\\/gm, "\\\\");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-
-            let replace = `(?<=${TemRexgexArticleB}\n)(.*\n)*.*$`;
-            let re = new RegExp(replace, "im");
-
-            if (articleArray[0].match(re)) {
-              let e = articleArray[0].match(re)[0];
-              e = articleArray[0].match(re)[0].replace(/\n+$/, "");
-              e = e.replace(/^\n+/, "");
-
-              point.push(e);
-            } else {
-              point.push([""]);
+            const re = new RegExp(
+              `(?<=${escapeRegex(keyA)}\n)(.*\n)*.*$`,
+              "im",
+            );
+            const match = articleArray[0].match(re);
+            if (match) {
+              e = match[0].replace(/\n+$/, "").replace(/^\n+/, "");
             }
           }
 
-          for (let c = 0; c < 1; c++) {
-            d++;
-
-            data[a][chapterArray[a]][b] = { [allArticle[a][b]]: point[d] };
-          }
+          point.push(e);
+          d++;
+          data[a][chapterArray[a]][b] = { [allArticle[a][b]]: point[d] };
         }
       } else {
-        // console.log('chapterArray[a]',chapterArray[a]);
-        // console.log('articleArray[0]',articleArray[0]);
         data[a][chapterArray[a]] = [
           { " ": articleArray[0].replace(/^\n+/, "") },
         ];
@@ -1543,155 +1585,98 @@ export function convertContentOfficialDispatch(contentOutputText) {
 
     data = [{ " ": firstOpenClause[0] }, ...data];
 
-    // setTextForMachine(data);
+  // ══════════════════════════════════════════════════════════════════════════
+  // NHÁNH 2: Có phần thứ (A. B. C. ...)
+  // ══════════════════════════════════════════════════════════════════════════
   } else if (i4.match(/(như sau|sau đây|lưu ý):\n(A|B|C|D|E|F|G|H)\./gm)) {
-    //////////////////////////////////////////////////////////  // nếu có phần thứ ...
     console.log("nếu có phần thứ ...");
 
-    let sectionArray;
-
-    if (i4.match(/^(A|B|C|D|E|F|G|H)\./gm)) {
-      sectionArray = i4.match(/^(A|B|C|D|E|F|G|H)\..*/gm);
-    } else {
-      sectionArray = null;
-    }
+    let sectionArray = i4.match(/^(A|B|C|D|E|F|G|H)\./gm)
+      ? i4.match(/^(A|B|C|D|E|F|G|H)\..*/gm)
+      : null;
 
     console.log("sectionArray", sectionArray);
-    let sectionArray0 = sectionArray[0].replace(/\\/gm, "\\\\");
-    sectionArray0 = sectionArray0.replace(/\(/gim, "\\(");
-    sectionArray0 = sectionArray0.replace(/\)/gim, "\\)");
-    sectionArray0 = sectionArray0.replace(/\./gim, "\\.");
-    sectionArray0 = sectionArray0.replace(/\?/gim, "\\?");
-    let firstOpenClause = i4.match(
-      new RegExp(`(.*\n)*.*\n*(?=\n${sectionArray0})`, "img"),
+
+    const firstOpenClause = i4.match(
+      new RegExp(`(.*\n)*.*\n*(?=\n${escapeRegex(sectionArray[0])})`, "img"),
     );
 
-    let ContentInEachSection; // lấy khoảng giữa các phần
     data = [];
-    let point = [];
 
-    for (var a = 0; a < sectionArray.length; a++) {
-      ContentInEachSection = [];
+    for (let a = 0; a < sectionArray.length; a++) {
+      let ContentInEachSection = [];
+
       if (a < sectionArray.length - 1) {
-        let sectionArrayA = sectionArray[a].replace(/\\/gm, "\\\\");
-        sectionArrayA = sectionArrayA.replace(/\(/gim, "\\(");
-        sectionArrayA = sectionArrayA.replace(/\)/gim, "\\)");
-        sectionArrayA = sectionArrayA.replace(/\./gim, "\\.");
-        sectionArrayA = sectionArrayA.replace(/\?/gim, "\\?");
-
-        let sectionArrayB = sectionArray[a + 1].replace(/\\/gm, "\\\\");
-        sectionArrayB = sectionArrayB.replace(/\(/gim, "\\(");
-        sectionArrayB = sectionArrayB.replace(/\)/gim, "\\)");
-        sectionArrayB = sectionArrayB.replace(/\./gim, "\\.");
-        sectionArrayB = sectionArrayB.replace(/\?/gim, "\\?");
-
-        let replace = `(?<=${sectionArrayA}\n)(.*\n)*(?=${sectionArrayB})`;
-        let re = new RegExp(replace, "gim");
+        const re = new RegExp(
+          `(?<=${escapeRegex(sectionArray[a])}\n)(.*\n)*(?=${escapeRegex(sectionArray[a + 1])})`,
+          "gim",
+        );
         ContentInEachSection = i4.match(re);
       } else {
-        let sectionArrayA = sectionArray[a].replace(/\\/gm, "\\\\");
-        sectionArrayA = sectionArrayA.replace(/\(/gim, "\\(");
-        sectionArrayA = sectionArrayA.replace(/\)/gim, "\\)");
-        sectionArrayA = sectionArrayA.replace(/\./gim, "\\.");
-        sectionArrayA = sectionArrayA.replace(/\?/gim, "\\?");
-
-        let replace = `((?<=${sectionArrayA}))((\n.*)*)$`;
-        let re = new RegExp(replace, "gim");
+        const re = new RegExp(
+          `((?<=${escapeRegex(sectionArray[a])}))((\\n.*)*)$`,
+          "gim",
+        );
         ContentInEachSection = i4.match(re);
       }
 
-      let chapterArray = []; // mảng có từng chapter riêng lẻ
-      let articleArray = []; // mảng có từng Điều riêng lẻ
+      let chapterArray = [];
+      let articleArray = [];
 
       if (ContentInEachSection[0].match(/^(V|I|X)*\..*/)) {
-        // nếu mà trong 'phần thứ...' có chương
-
+        // Trong phần thứ có chương
         chapterArray = ContentInEachSection[0].match(/^(V|I|X)*\..*/gm);
         data[a] = {};
         data[a][sectionArray[a]] = [];
         console.log("chapterArray", chapterArray);
-        console.log("ContentInEachSection[0]", ContentInEachSection[0]);
 
         let ContentInEachChapter = [];
         for (let b = 0; b < chapterArray.length; b++) {
           if (b < chapterArray.length - 1) {
-            let chapterArrayA = chapterArray[b].replace(/\\/gm, "\\\\");
-            chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
-            chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
-            chapterArrayA = chapterArrayA.replace(/\./gim, "\\.");
-            chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
-
-            let chapterArrayB = chapterArray[b + 1].replace(/\\/gm, "\\\\");
-            chapterArrayB = chapterArrayB.replace(/\(/gim, "\\(");
-            chapterArrayB = chapterArrayB.replace(/\)/gim, "\\)");
-            chapterArrayB = chapterArrayB.replace(/\./gim, "\\.");
-            chapterArrayB = chapterArrayB.replace(/\?/gim, "\\?");
-
-            let replace = `(?<=${chapterArrayA}\n)(.*\n)*(?=${chapterArrayB})`;
-            let re = new RegExp(replace, "gim");
+            const re = new RegExp(
+              `(?<=${escapeRegex(chapterArray[b])}\n)(.*\n)*(?=${escapeRegex(chapterArray[b + 1])})`,
+              "gim",
+            );
             ContentInEachChapter = ContentInEachSection[0].match(re);
-            console.log("replace", replace);
-            console.log("ContentInEachChapter", ContentInEachChapter);
           } else {
-            let chapterArrayA = chapterArray[b].replace(/\\/gm, "\\\\");
-            chapterArrayA = chapterArrayA.replace(/\(/gim, "\\(");
-            chapterArrayA = chapterArrayA.replace(/\)/gim, "\\)");
-            chapterArrayA = chapterArrayA.replace(/\./gim, "\\.");
-            chapterArrayA = chapterArrayA.replace(/\?/gim, "\\?");
-
-            let replace = `((?<=${chapterArrayA}))((\n.*)*)$`;
-            let re = new RegExp(replace, "gim");
+            const re = new RegExp(
+              `((?<=${escapeRegex(chapterArray[b])}))((\\n.*)*)$`,
+              "gim",
+            );
             ContentInEachChapter = ContentInEachSection[0].match(re);
-            console.log("replace", replace);
-            console.log("ContentInEachChapter", ContentInEachChapter);
           }
 
-          articleArray = ContentInEachChapter[0].match(
+          // Lọc sub-item
+          const rawArticles = ContentInEachChapter[0].match(
             /^(Câu )?\d+(\.\d+)*(\.|:)(.*)$/gim,
           );
+          articleArray = filterTopLevelArticles(rawArticles);
+
           data[a][sectionArray[a]][b] = {};
           data[a][sectionArray[a]][b][chapterArray[b]] = [];
 
-          // articleArray = RemoveNoOrder(articleArray);
-
           for (let c = 0; c < articleArray.length; c++) {
-            let TemRexgexArticleA = articleArray[c];
+            const keyA = articleArray[c];
+            const keyB = c < articleArray.length - 1 ? articleArray[c + 1] : null;
 
-            TemRexgexArticleA = articleArray[c].replace(/\\/gim, "\\\\");
-            TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
-            TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
-            TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
-            TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
-            if (c < articleArray.length - 1) {
-              let TemRexgexArticleB = articleArray[c + 1];
-
-              TemRexgexArticleB = articleArray[c + 1].replace(/\\/gim, "\\\\");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-              let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
-              let re = new RegExp(replace, "gim");
+            let point, e;
+            if (keyB) {
+              const re = new RegExp(
+                `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
+                "gim",
+              );
               point = ContentInEachChapter[0].match(re);
             } else {
-              let TemRexgexArticleB = articleArray[c];
-
-              TemRexgexArticleB = articleArray[c].replace(/\\/gim, "\\\\");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-              let replace = `((?<=${TemRexgexArticleB}))((\n.*)*)$`;
-              let re = new RegExp(replace, "gim");
+              const re = new RegExp(
+                `((?<=${escapeRegex(keyA)}))((\\n.*)*)$`,
+                "gim",
+              );
               point = ContentInEachChapter[0].match(re);
             }
-            let e;
-            if (point) {
-              e = point[0].replace(/\n+$/, "");
-              e = e.replace(/^\n+/, "");
-            } else {
-              e = "";
-            }
+
+            e = point
+              ? point[0].replace(/\n+$/, "").replace(/^\n+/, "")
+              : "";
 
             data[a][sectionArray[a]][b][chapterArray[b]].push({
               [articleArray[c]]: e,
@@ -1699,64 +1684,37 @@ export function convertContentOfficialDispatch(contentOutputText) {
           }
         }
       } else {
-        // nếu mà trong 'phần thứ...' không có chương
-
-        articleArray = ContentInEachSection[0].match(
+        // Trong phần thứ không có chương
+        const rawArticles = ContentInEachSection[0].match(
           /^(Câu )?\d+(\.\d+)*(\.|:)(.*)$/gim,
         );
+        articleArray = filterTopLevelArticles(rawArticles);
 
         data[a] = {};
         data[a][sectionArray[a]] = [];
 
-        // articleArray = RemoveNoOrder(articleArray);
         for (let b = 0; b < articleArray.length; b++) {
-          // lỡ mà trong 'Điều ...' có dấu ngoặc ),( thì phải thêm \),\(
-          // nếu không vì khi lấy nội dung của khoản sẽ bị lỗi
+          const keyA = articleArray[b];
+          const keyB = b < articleArray.length - 1 ? articleArray[b + 1] : null;
 
-          let TemRexgexArticleA = articleArray[b];
-
-          TemRexgexArticleA = articleArray[b].replace(/\\/gim, "\\\\");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
-          TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
-          if (b < articleArray.length - 1) {
-            let TemRexgexArticleB = articleArray[b + 1];
-
-            TemRexgexArticleB = articleArray[b + 1].replace(/\\/gim, "\\\\");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-            TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-
-            let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
-            let re = new RegExp(replace, "gim");
+          let point, e;
+          if (keyB) {
+            const re = new RegExp(
+              `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
+              "gim",
+            );
             point = ContentInEachSection[0].match(re);
           } else {
-            let TemRexgexArticleB = articleArray[b];
-            if (articleArray[b].match(/\(/gim)) {
-              TemRexgexArticleB = articleArray[b].replace(/\\/gim, "\\\\");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-              TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-            }
-
-            let replace = `(?<=${TemRexgexArticleB}\n)(.*\n)*.*$`;
-            let re = new RegExp(replace, "igm");
+            const re = new RegExp(
+              `(?<=${escapeRegex(keyA)}\n)(.*\n)*.*$`,
+              "igm",
+            );
             point = ContentInEachSection[0].match(re);
           }
 
-          let e;
-
-          if (point) {
-            e = point[0].replace(/\n+$/, "");
-            e = e.replace(/^\n+/, "");
-          } else {
-            e = "";
-          }
-
-          data[a][sectionArray[a]][b] = [];
+          e = point
+            ? point[0].replace(/\n+$/, "").replace(/^\n+/, "")
+            : "";
 
           data[a][sectionArray[a]][b] = { [articleArray[b]]: e };
         }
@@ -1765,86 +1723,139 @@ export function convertContentOfficialDispatch(contentOutputText) {
 
     data = [{ " ": firstOpenClause[0] }, ...data];
 
-    // setTextForMachine(data);
+  // ══════════════════════════════════════════════════════════════════════════
+  // NHÁNH 3: Chỉ có Điều / Câu (có trigger phrase "như sau/sau đây/lưu ý")
+  //          HOẶC văn bản bắt đầu thẳng bằng "1." không có trigger phrase
+  // ══════════════════════════════════════════════════════════════════════════
   } else if (
-    i4.match(/(như sau|sau đây|lưu ý):\n(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
+    i4.match(/(như sau|sau đây|lưu ý):\n(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim) ||
+    i4.match(/^\d+\. /m)
   ) {
-    /////////////////////////////////////////  // nếu chỉ có Điều ...
-
     console.log("nếu chỉ có Điều ...");
 
-    let point;
-    let articleArray = i4.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
-      ? i4.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
-      : i4.match(/^\d+(\.\d+)*\.(.*)$/gim);
-    // console.log(articleArray);
+    // Lấy tất cả article rồi lọc bỏ sub-item (11.1, 11.2...)
+    // Dùng text đã strip quoted blocks để tránh match nhầm số trong trích dẫn
+    const i4Stripped = stripQuotedBlocks(i4);
+    const rawArticles = i4Stripped.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
+      ? i4Stripped.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
+      : i4Stripped.match(/^\d+(\.\d+)*\.(.*)$/gim);
 
-    // articleArray = RemoveNoOrder(articleArray);
-    let articleArray0 = articleArray[0].replace(/\\/gim, "\\\\");
-    articleArray0 = articleArray0.replace(/\(/gim, "\\(");
-    articleArray0 = articleArray0.replace(/\)/gim, "\\)");
-    articleArray0 = articleArray0.replace(/\./gim, "\\.");
-    articleArray0 = articleArray0.replace(/\?/gim, "\\?");
-
-    let firstOpenClause = i4.match(
-      new RegExp(`(.*\n)*.*\n*(?=\n${articleArray0})`, "img"),
-    );
-    // console.log('firstOpenClause',firstOpenClause);
-
-    for (let c = 0; c < articleArray.length; c++) {
-      let TemRexgexArticleA = articleArray[c];
-      TemRexgexArticleA = articleArray[c].replace(/\\/gim, "\\\\");
-      TemRexgexArticleA = TemRexgexArticleA.replace(/\(/gim, "\\(");
-      TemRexgexArticleA = TemRexgexArticleA.replace(/\)/gim, "\\)");
-      TemRexgexArticleA = TemRexgexArticleA.replace(/\./gim, "\\.");
-      TemRexgexArticleA = TemRexgexArticleA.replace(/\?/gim, "\\?");
-
-      if (c < articleArray.length - 1) {
-        let TemRexgexArticleB = articleArray[c + 1];
-
-        TemRexgexArticleB = articleArray[c + 1].replace(/\\/gim, "\\\\");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-
-        let replace = `(?<=${TemRexgexArticleA}\n)(.*\n)*(?=${TemRexgexArticleB})`;
-        let re = new RegExp(replace, "gim");
-        point = i4.match(re);
+    // Nếu sau khi filter top-level không còn gì (VD: văn bản chỉ có 9.2. duy nhất)
+    // thì giữ nguyên rawArticles, coi toàn bộ là 1 key duy nhất
+    let articleArray = filterTopLevelArticles(rawArticles);
+    if (!articleArray || articleArray.length === 0) {
+      // Fallback: tất cả rawArticles đều là sub-item (VD: chỉ có 9.2., 9.3.)
+      // → lọc theo cùng "cấp" với item đầu tiên, loại các số nhỏ hơn (1. 2. 3. từ trong quote)
+      if (rawArticles && rawArticles.length > 0) {
+        const firstNum = rawArticles[0].match(/^(d+(?:.d+)*)[.:]/)?.[1] || '';
+        const firstDepth = firstNum.split('.').length; // 9.2 → depth=2
+        const firstBase  = firstNum.split('.')[0];     // 9.2 → base="9"
+        // Chỉ giữ items cùng depth và cùng base số đầu, hoặc nếu không tìm được thì lấy item đầu tiên
+        const sameLevel = rawArticles.filter(item => {
+          const num = item.match(/^(d+(?:.d+)*)[.:]/)?.[1] || '';
+          const depth = num.split('.').length;
+          const base  = num.split('.')[0];
+          return depth === firstDepth && base === firstBase;
+        });
+        articleArray = sameLevel.length > 0 ? sameLevel : [rawArticles[0]];
       } else {
-        let TemRexgexArticleB = articleArray[c];
-
-        TemRexgexArticleB = articleArray[c].replace(/\\/gim, "\\\\");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\(/gim, "\\(");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\)/gim, "\\)");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\./gim, "\\.");
-        TemRexgexArticleB = TemRexgexArticleB.replace(/\?/gim, "\\?");
-        console.log(TemRexgexArticleB);
-        console.log(i4);
-
-        let replace = `(?<=${TemRexgexArticleB}\n)(.*\n)*.*$`;
-        let re = new RegExp(replace, "gim");
-        point = i4.match(re);
-        console.log(point);
+        articleArray = [];
       }
-      let e;
-      if (point) {
-        e = point[0].replace(/\n+$/, "");
-        e = e.replace(/^\n+/, "");
-      } else {
-        e = "";
-      }
-
-      data[c] = { [articleArray[c]]: e };
-      // data.unshift({"":firstOpenClause});
     }
-    data = [{ " ": firstOpenClause[0] }, ...data];
-    // console.log('data1',data);
-    // setTextForMachine(data);
+
+    // Tách text thành các đoạn dựa vào số thứ tự đầu dòng top-level
+    // Dùng số thứ tự (1, 2, 3...) để tách thay vì full-line lookbehind dễ vỡ
+    function splitByTopLevelNumbers(text, keys) {
+      const result = [];
+      for (let i = 0; i < keys.length; i++) {
+        const currentNum = keys[i].match(/^(\d+)[.:]/)[1];
+        const nextNum = i < keys.length - 1
+          ? keys[i + 1].match(/^(\d+)[.:]/)[1]
+          : null;
+
+        let content = "";
+        if (nextNum) {
+          // Lấy từ sau dòng "currentNum." đến trước dòng "nextNum."
+          // dùng số thứ tự làm anchor, an toàn hơn full-line
+          const re = new RegExp(
+            `(?<=^${currentNum}\\.[^\\n]*\\n)([\\s\\S]*?)(?=^${nextNum}\\.)`,
+            "m",
+          );
+          const match = text.match(re);
+          content = match ? match[0].replace(/\n+$/, "").replace(/^\n+/, "") : "";
+        } else {
+          // Đoạn cuối: lấy từ sau dòng "currentNum." đến hết
+          const re = new RegExp(
+            `(?<=^${currentNum}\\.[^\\n]*\\n)([\\s\\S]*)$`,
+            "m",
+          );
+          const match = text.match(re);
+          content = match ? match[0].replace(/\n+$/, "").replace(/^\n+/, "") : "";
+        }
+        result.push(content);
+      }
+      return result;
+    }
+
+    // Kiểm tra xem key có phải dạng "Câu X:" không (không có số đầu dòng đơn thuần)
+    const hasCauFormat = articleArray[0]?.match(/^Câu /i);
+
+    let firstOpenClause = null;
+    if (hasCauFormat) {
+      // Nếu là "Câu X:" thì dùng cách cũ với escapeRegex
+      const articleArray0 = escapeRegex(articleArray[0]);
+      firstOpenClause = i4.match(
+        new RegExp(`(.*\n)*.*\n*(?=\n${articleArray0})`, "img"),
+      );
+    } else {
+      // Lấy phần header trước số "1." đầu tiên
+      const firstNum = articleArray[0].match(/^(\d+)[.:]/)[1];
+      const re = new RegExp(`^([\\s\\S]*?)(?=^${firstNum}\\.)`, "m");
+      const match = i4.match(re);
+      firstOpenClause = match && match[0].trim() ? [match[0]] : null;
+    }
+
+    if (hasCauFormat) {
+      // Nhánh Câu X: dùng escapeRegex như cũ
+      for (let c = 0; c < articleArray.length; c++) {
+        const keyA = articleArray[c];
+        const keyB = c < articleArray.length - 1 ? articleArray[c + 1] : null;
+
+        let point, e;
+        if (keyB) {
+          const re = new RegExp(
+            `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
+            "gim",
+          );
+          point = i4.match(re);
+        } else {
+          const re = new RegExp(
+            `(?<=${escapeRegex(keyA)}\n)(.*\n)*.*$`,
+            "gim",
+          );
+          point = i4.match(re);
+        }
+        e = point ? point[0].replace(/\n+$/, "").replace(/^\n+/, "") : "";
+        data[c] = { [articleArray[c]]: e };
+      }
+    } else {
+      // Nhánh số thứ tự "1." "2." — dùng splitByTopLevelNumbers
+      const contents = splitByTopLevelNumbers(i4, articleArray);
+      for (let c = 0; c < articleArray.length; c++) {
+        data[c] = { [articleArray[c]]: contents[c] };
+      }
+    }
+
+    if (firstOpenClause && firstOpenClause[0] && firstOpenClause[0].trim()) {
+      data = [{ " ": firstOpenClause[0] }, ...data];
+    }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // NHÁNH 4: Không có cấu trúc gì cả
+  // ══════════════════════════════════════════════════════════════════════════
   } else {
     console.log("nếu không có chương, phần, điều nào cả ...");
     data = [{ " ": i4 }];
-    // setTextForMachine(data);
   }
 
   console.table("data", data);

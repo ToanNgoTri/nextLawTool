@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "cosine-similarity": "^1.0.1",
     "mongodb": "^6.19.0",
     "next": "15.5.0",
+    "ollama": "^0.6.3",
     "puppeteer": "^24.17.0",
     "puppeteer-core": "^24.17.0",
     "react": "19.1.0",
