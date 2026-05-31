@@ -161,7 +161,7 @@ const results = await lawChunks.aggregate([
 ]).toArray();
 
 // console.log('vectorRequest',vectorRequest);
-console.log('results',results);
+// console.log('results',results);
   
 const response = await fetch(
 "https://openrouter.ai/api/v1/chat/completions",

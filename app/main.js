@@ -1378,484 +1378,191 @@ export function convertContent(contentOutputText) {
 export function convertContentOfficialDispatch(contentOutputText) {
   console.log("convertContentOfficialDispatch");
 
-  // ─── Helper: escape special regex chars ───────────────────────────────────
-  function escapeRegex(str) {
-    return str
-      .replace(/\\/gm, "\\\\")
-      .replace(/\(/gim, "\\(")
-      .replace(/\)/gim, "\\)")
-      .replace(/\./gim, "\\.")
-      .replace(/\?/gim, "\\?");
-  }
-
-  // ─── Helper: lấy nội dung giữa articleA và articleB (hoặc đến cuối) ───────
-  function getContentBetween(text, keyA, keyB = null) {
-    const eA = escapeRegex(keyA);
-    const pattern = keyB
-      ? `(?<=${eA}\n)(.*\n)*(?=${escapeRegex(keyB)})`
-      : `(?<=${eA}\n)(.*\n)*.*$`;
-    const re = new RegExp(pattern, keyB ? "gim" : "gim");
-    const match = text.match(re);
-    if (!match) return "";
-    return match[0].replace(/\n+$/, "").replace(/^\n+/, "");
-  }
-
-  // Helper: lọc các dòng KHÔNG nằm trong quoted block
-  // Duyệt từng dòng, theo dõi trạng thái "đang trong trích dẫn".
-  // Hỗ trợ: " " (thẳng), “ ” (cong), „ ‟ (low-high)
-  function stripQuotedBlocks(text) {
-    // Chiến lược: duyệt từng dòng, theo dõi trạng thái insideQuote.
-    // Dấu quote thẳng ": đếm số lượng trong dòng.
-    //   - Nếu ĐANG NGOÀI block: lẻ = mở block (chưa đóng trên dòng này)
-    //   - Nếu ĐANG TRONG block: lẻ = đóng block (dòng này là dòng đóng)
-    // Dấu quote cong “”: rõ ràng mở/đóng riêng biệt.
-    const lines = text.split('\n');
-    let insideQuote = false;
-    const result = [];
-
-    for (const line of lines) {
-      const curlyOpen  = (line.match(/[“„]/g) || []).length;
-      const curlyClose = (line.match(/[”‟]/g) || []).length;
-      const straight   = (line.match(/"/g) || []).length;
-
-      if (insideQuote) {
-        // --- Đang trong block quote ---
-        // Kiểm tra dòng này có đóng block không
-        const closedByCurly = curlyClose > 0;
-        // Với dấu thẳng: lẻ = đóng block (vì ta vào với 1 dấu mở, dấu lẻ này là dấu đóng)
-        const closedByStraight = straight % 2 !== 0;
-        if (closedByCurly || closedByStraight) insideQuote = false;
-        continue; // luôn bỏ dòng đang trong quote (kể cả dòng đóng)
-      }
-
-      // --- Đang ngoài block quote ---
-      const opensByCurly = curlyOpen > curlyClose; // có curly mở chưa đóng cùng dòng
-      // Với dấu thẳng: lẻ = có dấu mở chưa đóng cùng dòng
-      const opensByStraight = (straight % 2 !== 0) && curlyOpen === 0;
-
-      if (opensByCurly) {
-        // Giữ phần trước dấu mở curly
-        const openIdx = line.search(/[“„]/);
-        const before = line.slice(0, openIdx).trimEnd();
-        if (before) result.push(before);
-        insideQuote = true;
-      } else if (opensByStraight) {
-        // Giữ phần trước dấu " đầu tiên lẻ (dấu mở block)
-        const openIdx = line.indexOf('"');
-        const before = line.slice(0, openIdx).trimEnd();
-        if (before) result.push(before);
-        insideQuote = true;
-      } else {
-        // Không có block mở → giữ nguyên dòng
-        result.push(line);
-      }
-    }
-    return result.join('\n');
-  }
-
-  // ─── Helper: lọc articleArray, gom sub-item vào key cha ──────────────────
-  // Logic:
-  //   - Nếu TẤT CẢ items đều là top-level (1. 2. 3.) → giữ tất cả
-  //   - Nếu TẤT CẢ items đều là sub-item (9.1. 9.2.) → giữ tất cả
-  //   - Nếu CHỈ CÓ top-level (không có sub-item) → giữ tất cả
-  //   - Nếu HỖN HỢP top-level + sub-item (1. 2. 2.1. 2.2. 3.) → bỏ sub-item, giữ top-level
-  //     VD: [1., 2., 2.1., 2.2., 3.] → [1., 2., 3.] vì 2.1/2.2 nằm trong 2.
-  //   - ĐẶC BIỆT: nếu hỗn hợp mà sub-item có BASE KHÁC top-level (9.2. + 10.) → giữ tất cả
-  function filterTopLevelArticles(articleArray) {
-    if (!articleArray || articleArray.length === 0) return [];
-    const subItems = articleArray.filter(item => item.match(/^\d+\.\d+/));
-    const topItems = articleArray.filter(item => !item.match(/^\d+\.\d+/));
-    // Không có sub-item → giữ nguyên
-    if (subItems.length === 0) return articleArray;
-    // Không có top-item → toàn sub-item → giữ nguyên
-    if (topItems.length === 0) return articleArray;
-    // Hỗn hợp: kiểm tra xem sub-item có cùng BASE với top-item không
-    // VD: [1., 2., 2.1., 2.2.] → sub (2.1,2.2) có base=2, top có 2. → cùng base → filter sub
-    // VD: [9.2., 10.] → sub (9.2) base=9, top (10) base=10 → khác base → giữ tất cả
-    const topBases = new Set(topItems.map(item => item.match(/^(\d+)[.:]/)?.[1]));
-    const subBases = subItems.map(item => item.match(/^(\d+)/)?.[1]);
-    const allSubHaveMatchingTop = subBases.every(base => topBases.has(base));
-    if (allSubHaveMatchingTop) {
-      // Sub-item có top-level tương ứng → bỏ sub-item (chúng sẽ nằm trong value của top)
-      return topItems;
-    }
-    // Sub-item không có top-level tương ứng → giữ tất cả
-    return articleArray;
-  }
-
-  // ─── Normalize input ──────────────────────────────────────────────────────
-  let input = contentOutputText;
-  let i1 = input.replace(/^Câu( |\u00A0)+(\d+\w?)\.(.*)/gim, "Câu $2:$3");
+  // ─── Normalize ────────────────────────────────────────────────────────────
+  let i1 = contentOutputText.replace(/^Câu( |\u00A0)+(\d+\w?)\.(.*)/gim, "Câu $2:$3");
   let i2 = i1.replace(/­/gm, "");
   let i3 = i2.replace(/\[\d*\]/gim, "");
   let i4 = i3.replace(/\u00A0/gim, " ");
 
   contentText = i4;
 
+  // ─── Helper: strip quoted blocks ─────────────────────────────────────────
+  // Duyệt từng dòng, theo dõi trạng thái insideQuote.
+  // Dòng nào nằm trong "..." → bỏ qua (không đưa vào stripped).
+  // Hỗ trợ " " thẳng, " " cong (U+201C/D), „ ‟ (U+201E/F).
+  // Logic đếm chẵn/lẻ dấu " trên mỗi dòng:
+  //   - Ngoài quote: dấu " lẻ = mở block chưa đóng → vào insideQuote
+  //   - Trong quote: dấu " lẻ = đóng block → thoát insideQuote
+  //   - Dấu " chẵn = inline quote đóng mở cùng dòng → giữ nguyên
+  function stripQuotedBlocks(text) {
+    const lines = text.split("\n");
+    let insideQuote = false;
+    const result = [];
+    for (const line of lines) {
+      const curlyOpen  = (line.match(/[\u201C\u201E]/g) || []).length;
+      const curlyClose = (line.match(/[\u201D\u201F]/g) || []).length;
+      const straight   = (line.match(/"/g) || []).length;
+
+      if (insideQuote) {
+        // Đang trong block: tìm dấu đóng
+        if (curlyClose > 0 || straight % 2 !== 0) insideQuote = false;
+        continue; // bỏ dòng này dù đóng hay chưa
+      }
+
+      const opensByCurly    = curlyOpen > curlyClose;
+      const opensByStraight = straight % 2 !== 0 && curlyOpen === 0;
+
+      if (opensByCurly) {
+        // Giữ phần trước dấu mở curly
+        const before = line.slice(0, line.search(/[\u201C\u201E]/)).trimEnd();
+        if (before) result.push(before);
+        insideQuote = true;
+      } else if (opensByStraight) {
+        // Giữ phần trước dấu " thẳng đầu tiên
+        const before = line.slice(0, line.indexOf('"')).trimEnd();
+        if (before) result.push(before);
+        insideQuote = true;
+      } else {
+        result.push(line); // không có block mở → giữ nguyên
+      }
+    }
+    return result.join("\n");
+  }
+
+  // ─── Helper: tìm tất cả heading lines trong stripped text ────────────────
+  // Heading = dòng bắt đầu bằng số (nguyên hoặc sub như 9.1.) theo sau là . hoặc :
+  function findHeadings(strippedText) {
+    const lines = strippedText.split("\n");
+    const headings = [];
+    lines.forEach((line) => {
+      const m = line.match(/^(\d+(?:\.\d+)*)[\.:]( |$)/);
+      if (m) {
+        headings.push({
+          line,
+          num:   m[1],
+          depth: m[1].split(".").filter(Boolean).length,
+        });
+      }
+    });
+    return headings;
+  }
+
+  // ─── Helper: parse text thành [{key: value}] theo min-depth headings ─────
+  // Min-depth = cấp cao nhất có trong văn bản → làm key.
+  // Value = toàn bộ nội dung từ sau key đến trước key tiếp theo (cùng cấp).
+  // Phần trước key đầu tiên → { " ": ... }
+  function parseByMinDepthHeadings(fullText, strippedText) {
+    const headings = findHeadings(strippedText);
+    if (!headings.length) return [{ " ": fullText }];
+
+    const minDepth   = Math.min(...headings.map((h) => h.depth));
+    const topHeadings = headings.filter((h) => h.depth === minDepth);
+
+    const fullLines = fullText.split("\n");
+    const result    = [];
+
+    // Tìm index dòng trong fullLines khớp với heading line
+    // (heading line từ stripped có thể bị cắt bớt nếu có quote mở giữa dòng)
+    function findLineIndex(headingLine, startFrom = 0) {
+      for (let i = startFrom; i < fullLines.length; i++) {
+        // So sánh bằng startsWith vì dòng trong full có thể dài hơn (phần sau dấu ")
+        if (fullLines[i] === headingLine || fullLines[i].startsWith(headingLine)) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    // Phần header trước key đầu tiên
+    const firstIdx = findLineIndex(topHeadings[0].line);
+    if (firstIdx > 0) {
+      const header = fullLines.slice(0, firstIdx).join("\n").trim();
+      if (header) result.push({ " ": header });
+    }
+
+    // Từng key → value
+    let searchFrom = 0;
+    for (let i = 0; i < topHeadings.length; i++) {
+      const current  = topHeadings[i];
+      const next     = topHeadings[i + 1];
+      const startIdx = findLineIndex(current.line, searchFrom);
+      if (startIdx === -1) continue;
+
+      const endIdx = next
+        ? findLineIndex(next.line, startIdx + 1)
+        : fullLines.length;
+
+      const valueLines = fullLines.slice(startIdx + 1, endIdx === -1 ? fullLines.length : endIdx);
+      const value = valueLines.join("\n").replace(/^\n+/, "").replace(/\n+$/, "");
+
+      result.push({ [current.line]: value });
+      searchFrom = startIdx + 1;
+    }
+
+    return result;
+  }
+
+  // ─── Detect cấu trúc và parse ─────────────────────────────────────────────
   let data = [];
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // NHÁNH 1: Có chương (I. II. III. ...)
-  // ══════════════════════════════════════════════════════════════════════════
+  const stripped = stripQuotedBlocks(i4);
+
+  // Kiểm tra xem có cấu trúc chương (I. II. III.) không
   if (i4.match(/(như sau|sau đây|lưu ý):\n(V|I|X)\./gm)) {
     console.log("nếu có chương ...");
 
-    let chapterArray = i4.match(/^(V|I|X)*\./gm)
-      ? i4.match(/^(V|I|X)*\..*/gm)
-      : null;
+    const chapterArray = i4.match(/^(V|I|X)+\..*/gm);
+    if (!chapterArray) {
+      data = parseByMinDepthHeadings(i4, stripped);
+    } else {
+      // Tìm phần trước chương đầu tiên
+      const firstChapterIdx = i4.indexOf(chapterArray[0]);
+      const header = i4.slice(0, firstChapterIdx).trim();
+      if (header) data.push({ " ": header });
 
-    const firstOpenClause = i4.match(
-      new RegExp(`(.*\n)*.*\n*(?=\n${escapeRegex(chapterArray[0])})`, "img"),
-    );
+      for (let a = 0; a < chapterArray.length; a++) {
+        const chStart = i4.indexOf(chapterArray[a]);
+        const chEnd   = a < chapterArray.length - 1
+          ? i4.indexOf(chapterArray[a + 1])
+          : i4.length;
+        const chContent = i4.slice(chStart + chapterArray[a].length, chEnd).trim();
 
-    let allArticle = [];
-    let point = [];
-    let d = -1;
-
-    for (let a = 0; a < chapterArray.length; a++) {
-      let articleArray = [];
-
-      // Lấy nội dung trong chương a
-      if (a < chapterArray.length - 1) {
-        const re = new RegExp(
-          `(?<=${escapeRegex(chapterArray[a])}\n)(.*\n)*(?=${escapeRegex(chapterArray[a + 1])})`,
-          "gim",
-        );
-        articleArray = i4.match(re);
-      } else {
-        const re = new RegExp(
-          `((?<=${escapeRegex(chapterArray[a])}))((\\n.*)*)$`,
-          "gim",
-        );
-        articleArray = i4.match(re);
-      }
-
-      data[a] = { [chapterArray[a]]: [] };
-
-      // Lấy danh sách article trong chương, lọc bỏ sub-item
-      let rawArticles = articleArray[0].match(/^Câu \d+\:(.*)$/gim)
-        ? articleArray[0].match(/^Câu \d+\:(.*)$/gim)
-        : articleArray[0].match(/^\d+(\.\d+)*\.(.*)$/gim);
-
-      let topArticles = filterTopLevelArticles(rawArticles);
-
-      if (topArticles && topArticles.length > 0) {
-        allArticle.push(topArticles);
-      } else {
-        allArticle.push(undefined);
-      }
-
-      if (allArticle[a]) {
-        const countArticle = allArticle[a].length;
-        for (let b = 0; b < countArticle; b++) {
-          const keyA = allArticle[a][b];
-          const keyB = b < countArticle - 1 ? allArticle[a][b + 1] : null;
-
-          let e = "";
-          if (keyB) {
-            const re = new RegExp(
-              `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
-              "gim",
-            );
-            const match = articleArray[0].match(re);
-            if (match) {
-              e = match[0].replace(/\n+$/, "").replace(/^\n+/, "");
-            }
-          } else {
-            const re = new RegExp(
-              `(?<=${escapeRegex(keyA)}\n)(.*\n)*.*$`,
-              "im",
-            );
-            const match = articleArray[0].match(re);
-            if (match) {
-              e = match[0].replace(/\n+$/, "").replace(/^\n+/, "");
-            }
-          }
-
-          point.push(e);
-          d++;
-          data[a][chapterArray[a]][b] = { [allArticle[a][b]]: point[d] };
-        }
-      } else {
-        data[a][chapterArray[a]] = [
-          { " ": articleArray[0].replace(/^\n+/, "") },
-        ];
+        // Parse nội dung trong chương theo min-depth headings
+        const chStripped = stripQuotedBlocks(chContent);
+        const chData     = parseByMinDepthHeadings(chContent, chStripped);
+        data.push({ [chapterArray[a]]: chData });
       }
     }
 
-    data = [{ " ": firstOpenClause[0] }, ...data];
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // NHÁNH 2: Có phần thứ (A. B. C. ...)
-  // ══════════════════════════════════════════════════════════════════════════
+  // Kiểm tra xem có cấu trúc phần (A. B. C.) không
   } else if (i4.match(/(như sau|sau đây|lưu ý):\n(A|B|C|D|E|F|G|H)\./gm)) {
     console.log("nếu có phần thứ ...");
 
-    let sectionArray = i4.match(/^(A|B|C|D|E|F|G|H)\./gm)
-      ? i4.match(/^(A|B|C|D|E|F|G|H)\..*/gm)
-      : null;
-
-    console.log("sectionArray", sectionArray);
-
-    const firstOpenClause = i4.match(
-      new RegExp(`(.*\n)*.*\n*(?=\n${escapeRegex(sectionArray[0])})`, "img"),
-    );
-
-    data = [];
-
-    for (let a = 0; a < sectionArray.length; a++) {
-      let ContentInEachSection = [];
-
-      if (a < sectionArray.length - 1) {
-        const re = new RegExp(
-          `(?<=${escapeRegex(sectionArray[a])}\n)(.*\n)*(?=${escapeRegex(sectionArray[a + 1])})`,
-          "gim",
-        );
-        ContentInEachSection = i4.match(re);
-      } else {
-        const re = new RegExp(
-          `((?<=${escapeRegex(sectionArray[a])}))((\\n.*)*)$`,
-          "gim",
-        );
-        ContentInEachSection = i4.match(re);
-      }
-
-      let chapterArray = [];
-      let articleArray = [];
-
-      if (ContentInEachSection[0].match(/^(V|I|X)*\..*/)) {
-        // Trong phần thứ có chương
-        chapterArray = ContentInEachSection[0].match(/^(V|I|X)*\..*/gm);
-        data[a] = {};
-        data[a][sectionArray[a]] = [];
-        console.log("chapterArray", chapterArray);
-
-        let ContentInEachChapter = [];
-        for (let b = 0; b < chapterArray.length; b++) {
-          if (b < chapterArray.length - 1) {
-            const re = new RegExp(
-              `(?<=${escapeRegex(chapterArray[b])}\n)(.*\n)*(?=${escapeRegex(chapterArray[b + 1])})`,
-              "gim",
-            );
-            ContentInEachChapter = ContentInEachSection[0].match(re);
-          } else {
-            const re = new RegExp(
-              `((?<=${escapeRegex(chapterArray[b])}))((\\n.*)*)$`,
-              "gim",
-            );
-            ContentInEachChapter = ContentInEachSection[0].match(re);
-          }
-
-          // Lọc sub-item
-          const rawArticles = ContentInEachChapter[0].match(
-            /^(Câu )?\d+(\.\d+)*(\.|:)(.*)$/gim,
-          );
-          articleArray = filterTopLevelArticles(rawArticles);
-
-          data[a][sectionArray[a]][b] = {};
-          data[a][sectionArray[a]][b][chapterArray[b]] = [];
-
-          for (let c = 0; c < articleArray.length; c++) {
-            const keyA = articleArray[c];
-            const keyB = c < articleArray.length - 1 ? articleArray[c + 1] : null;
-
-            let point, e;
-            if (keyB) {
-              const re = new RegExp(
-                `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
-                "gim",
-              );
-              point = ContentInEachChapter[0].match(re);
-            } else {
-              const re = new RegExp(
-                `((?<=${escapeRegex(keyA)}))((\\n.*)*)$`,
-                "gim",
-              );
-              point = ContentInEachChapter[0].match(re);
-            }
-
-            e = point
-              ? point[0].replace(/\n+$/, "").replace(/^\n+/, "")
-              : "";
-
-            data[a][sectionArray[a]][b][chapterArray[b]].push({
-              [articleArray[c]]: e,
-            });
-          }
-        }
-      } else {
-        // Trong phần thứ không có chương
-        const rawArticles = ContentInEachSection[0].match(
-          /^(Câu )?\d+(\.\d+)*(\.|:)(.*)$/gim,
-        );
-        articleArray = filterTopLevelArticles(rawArticles);
-
-        data[a] = {};
-        data[a][sectionArray[a]] = [];
-
-        for (let b = 0; b < articleArray.length; b++) {
-          const keyA = articleArray[b];
-          const keyB = b < articleArray.length - 1 ? articleArray[b + 1] : null;
-
-          let point, e;
-          if (keyB) {
-            const re = new RegExp(
-              `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
-              "gim",
-            );
-            point = ContentInEachSection[0].match(re);
-          } else {
-            const re = new RegExp(
-              `(?<=${escapeRegex(keyA)}\n)(.*\n)*.*$`,
-              "igm",
-            );
-            point = ContentInEachSection[0].match(re);
-          }
-
-          e = point
-            ? point[0].replace(/\n+$/, "").replace(/^\n+/, "")
-            : "";
-
-          data[a][sectionArray[a]][b] = { [articleArray[b]]: e };
-        }
-      }
-    }
-
-    data = [{ " ": firstOpenClause[0] }, ...data];
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // NHÁNH 3: Chỉ có Điều / Câu (có trigger phrase "như sau/sau đây/lưu ý")
-  //          HOẶC văn bản bắt đầu thẳng bằng "1." không có trigger phrase
-  // ══════════════════════════════════════════════════════════════════════════
-  } else if (
-    i4.match(/(như sau|sau đây|lưu ý):\n(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim) ||
-    i4.match(/^\d+\. /m)
-  ) {
-    console.log("nếu chỉ có Điều ...");
-
-    // Lấy tất cả article rồi lọc bỏ sub-item (11.1, 11.2...)
-    // Dùng text đã strip quoted blocks để tránh match nhầm số trong trích dẫn
-    const i4Stripped = stripQuotedBlocks(i4);
-    const rawArticles = i4Stripped.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
-      ? i4Stripped.match(/^(Câu (hỏi )?)?\d+(\.|:)(.*)$/gim)
-      : i4Stripped.match(/^\d+(\.\d+)*\.(.*)$/gim);
-
-    // Nếu sau khi filter top-level không còn gì (VD: văn bản chỉ có 9.2. duy nhất)
-    // thì giữ nguyên rawArticles, coi toàn bộ là 1 key duy nhất
-    let articleArray = filterTopLevelArticles(rawArticles);
-    if (!articleArray || articleArray.length === 0) {
-      // Fallback: tất cả rawArticles đều là sub-item (VD: chỉ có 9.2., 9.3.)
-      // → lọc theo cùng "cấp" với item đầu tiên, loại các số nhỏ hơn (1. 2. 3. từ trong quote)
-      if (rawArticles && rawArticles.length > 0) {
-        const firstNum = rawArticles[0].match(/^(d+(?:.d+)*)[.:]/)?.[1] || '';
-        const firstDepth = firstNum.split('.').length; // 9.2 → depth=2
-        const firstBase  = firstNum.split('.')[0];     // 9.2 → base="9"
-        // Chỉ giữ items cùng depth và cùng base số đầu, hoặc nếu không tìm được thì lấy item đầu tiên
-        const sameLevel = rawArticles.filter(item => {
-          const num = item.match(/^(d+(?:.d+)*)[.:]/)?.[1] || '';
-          const depth = num.split('.').length;
-          const base  = num.split('.')[0];
-          return depth === firstDepth && base === firstBase;
-        });
-        articleArray = sameLevel.length > 0 ? sameLevel : [rawArticles[0]];
-      } else {
-        articleArray = [];
-      }
-    }
-
-    // Tách text thành các đoạn dựa vào số thứ tự đầu dòng top-level
-    // Dùng số thứ tự (1, 2, 3...) để tách thay vì full-line lookbehind dễ vỡ
-    function splitByTopLevelNumbers(text, keys) {
-      const result = [];
-      for (let i = 0; i < keys.length; i++) {
-        const currentNum = keys[i].match(/^(\d+)[.:]/)[1];
-        const nextNum = i < keys.length - 1
-          ? keys[i + 1].match(/^(\d+)[.:]/)[1]
-          : null;
-
-        let content = "";
-        if (nextNum) {
-          // Lấy từ sau dòng "currentNum." đến trước dòng "nextNum."
-          // dùng số thứ tự làm anchor, an toàn hơn full-line
-          const re = new RegExp(
-            `(?<=^${currentNum}\\.[^\\n]*\\n)([\\s\\S]*?)(?=^${nextNum}\\.)`,
-            "m",
-          );
-          const match = text.match(re);
-          content = match ? match[0].replace(/\n+$/, "").replace(/^\n+/, "") : "";
-        } else {
-          // Đoạn cuối: lấy từ sau dòng "currentNum." đến hết
-          const re = new RegExp(
-            `(?<=^${currentNum}\\.[^\\n]*\\n)([\\s\\S]*)$`,
-            "m",
-          );
-          const match = text.match(re);
-          content = match ? match[0].replace(/\n+$/, "").replace(/^\n+/, "") : "";
-        }
-        result.push(content);
-      }
-      return result;
-    }
-
-    // Kiểm tra xem key có phải dạng "Câu X:" không (không có số đầu dòng đơn thuần)
-    const hasCauFormat = articleArray[0]?.match(/^Câu /i);
-
-    let firstOpenClause = null;
-    if (hasCauFormat) {
-      // Nếu là "Câu X:" thì dùng cách cũ với escapeRegex
-      const articleArray0 = escapeRegex(articleArray[0]);
-      firstOpenClause = i4.match(
-        new RegExp(`(.*\n)*.*\n*(?=\n${articleArray0})`, "img"),
-      );
+    const sectionArray = i4.match(/^(A|B|C|D|E|F|G|H)\..*/gm);
+    if (!sectionArray) {
+      data = parseByMinDepthHeadings(i4, stripped);
     } else {
-      // Lấy phần header trước số "1." đầu tiên
-      const firstNum = articleArray[0].match(/^(\d+)[.:]/)[1];
-      const re = new RegExp(`^([\\s\\S]*?)(?=^${firstNum}\\.)`, "m");
-      const match = i4.match(re);
-      firstOpenClause = match && match[0].trim() ? [match[0]] : null;
-    }
+      const firstSectionIdx = i4.indexOf(sectionArray[0]);
+      const header = i4.slice(0, firstSectionIdx).trim();
+      if (header) data.push({ " ": header });
 
-    if (hasCauFormat) {
-      // Nhánh Câu X: dùng escapeRegex như cũ
-      for (let c = 0; c < articleArray.length; c++) {
-        const keyA = articleArray[c];
-        const keyB = c < articleArray.length - 1 ? articleArray[c + 1] : null;
+      for (let a = 0; a < sectionArray.length; a++) {
+        const secStart   = i4.indexOf(sectionArray[a]);
+        const secEnd     = a < sectionArray.length - 1
+          ? i4.indexOf(sectionArray[a + 1])
+          : i4.length;
+        const secContent = i4.slice(secStart + sectionArray[a].length, secEnd).trim();
 
-        let point, e;
-        if (keyB) {
-          const re = new RegExp(
-            `(?<=${escapeRegex(keyA)}\n)(.*\n)*(?=${escapeRegex(keyB)})`,
-            "gim",
-          );
-          point = i4.match(re);
-        } else {
-          const re = new RegExp(
-            `(?<=${escapeRegex(keyA)}\n)(.*\n)*.*$`,
-            "gim",
-          );
-          point = i4.match(re);
-        }
-        e = point ? point[0].replace(/\n+$/, "").replace(/^\n+/, "") : "";
-        data[c] = { [articleArray[c]]: e };
-      }
-    } else {
-      // Nhánh số thứ tự "1." "2." — dùng splitByTopLevelNumbers
-      const contents = splitByTopLevelNumbers(i4, articleArray);
-      for (let c = 0; c < articleArray.length; c++) {
-        data[c] = { [articleArray[c]]: contents[c] };
+        const secStripped = stripQuotedBlocks(secContent);
+        const secData     = parseByMinDepthHeadings(secContent, secStripped);
+        data.push({ [sectionArray[a]]: secData });
       }
     }
 
-    if (firstOpenClause && firstOpenClause[0] && firstOpenClause[0].trim()) {
-      data = [{ " ": firstOpenClause[0] }, ...data];
-    }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // NHÁNH 4: Không có cấu trúc gì cả
-  // ══════════════════════════════════════════════════════════════════════════
+  // Không có chương/phần → parse trực tiếp
   } else {
-    console.log("nếu không có chương, phần, điều nào cả ...");
-    data = [{ " ": i4 }];
+    console.log("parse trực tiếp theo heading số ...");
+    data = parseByMinDepthHeadings(i4, stripped);
   }
 
   console.table("data", data);
