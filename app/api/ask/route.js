@@ -16,7 +16,7 @@ import { MongoClient } from "mongodb"
 import { log } from "console";
 
 const client = new MongoClient(
-  "mongodb+srv://ngotritoan33:bookertandtajiri33@location.bijatuf.mongodb.net"
+  process.env.MONGODB_URI_AI
 )
 
 
@@ -168,7 +168,7 @@ const response = await fetch(
 {
 method: "POST",
 headers: {
-"Authorization": "Bearer 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",
+"Authorization": process.env.OPENROUTER_API_KEY,
 "Content-Type": "application/json",
 },
 body: JSON.stringify({

@@ -2,8 +2,7 @@ import { MongoClient } from "mongodb";
 import { NextResponse } from "next/server";
 
 const client = new MongoClient(
-  "mongodb://thuvienphapluat:ZvQn9683p8NnPXFMdR1VX53HTK3Da1WqyXJpvtgMMASTRdDkyu87lFAL7aR5DiiN@46.225.145.42:6980/?directConnection=true"
-);
+process.env.MONGODB_URI);
 
 export async function POST(req) {
   const body = await req.json();
