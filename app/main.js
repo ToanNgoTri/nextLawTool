@@ -48,19 +48,17 @@ export function getRoleSign(contentRoleSign, nameSign) {
 
   for (let a = 0; a < nameSign.length; a++) {
     // console.log('nameSign',nameSign);
-    
+
     contentRoleSign = contentRoleSign.replace(/(\n|\t)+/gim, "\n");
 
     // console.log(contentRoleSign,nameSign[a])
     let roleSignString = contentRoleSign
       .match(new RegExp(`.*(?=\n.*${nameSign[a]})`, "img"))[0]
       .toLowerCase(); //key.charAt(0).toUpperCase() + key.slice(1);
-      
 
     roleSignString =
       roleSignString.charAt(0).toUpperCase() + roleSignString.slice(1);
 
-      
     if (roleSignString.match(/^phó/i)) {
       roleSignString =
         "Phó " +
@@ -75,7 +73,7 @@ export function getRoleSign(contentRoleSign, nameSign) {
     roleSign.push(roleSignString);
   }
   // console.log('roleSign', roleSign);
-  
+
   return roleSign;
 }
 
@@ -88,7 +86,7 @@ export function getArrangeUnitPublic(
   let nameSign = [];
   let unitPbDemo = [];
   // console.log('roleSignString', roleSignString);
-  
+
   nameSignArrayDemo.map((nameSignDemo, i) => {
     let nameSignString = roleSignString.match(
       new RegExp(`.*${nameSignDemo}.*`, "img"),
@@ -511,7 +509,7 @@ export function convertPartTwo(partOne, nameSign) {
 
     clause = partOne.match(`(?<=(\n.*){${t}}).*`, "im")[[0]];
     // console.log(clause);
-    
+
     if (
       lawKind ? lawKind.match(/nghị quyết/i) : partOne.match(/^nghị quyết/i)
     ) {
@@ -559,9 +557,8 @@ export function convertPartTwo(partOne, nameSign) {
       // console.log("b14d", b14);
 
       break;
-    }else{
+    } else {
       // console.log("not have b14");
-      
     }
   }
   // console.log("partOne", partOne);
@@ -866,8 +863,8 @@ export async function getNormalTextInfo(
   nameSignArrayDemo,
   ObjectLawPair,
   lawDaySign,
-  lawNameDisplay,   // lấy từ phần tổng quan trong luatvietnam
-  lawDescription,   // lawDescription lấy từ phần cuối giới thiệu phần đầu trong luật
+  lawNameDisplay, // lấy từ phần tổng quan trong luatvietnam
+  lawDescription, // lawDescription lấy từ phần cuối giới thiệu phần đầu trong luật
   lawKind,
   unitPublishAray,
   lawRelated,
@@ -1379,7 +1376,10 @@ export function convertContentOfficialDispatch(contentOutputText) {
   console.log("convertContentOfficialDispatch");
 
   // ─── Normalize ────────────────────────────────────────────────────────────
-  let i1 = contentOutputText.replace(/^Câu( |\u00A0)+(\d+\w?)\.(.*)/gim, "Câu $2:$3");
+  let i1 = contentOutputText.replace(
+    /^Câu( |\u00A0)+(\d+\w?)\.(.*)/gim,
+    "Câu $2:$3",
+  );
   let i2 = i1.replace(/­/gm, "");
   let i3 = i2.replace(/\[\d*\]/gim, "");
   let i4 = i3.replace(/\u00A0/gim, " ");
@@ -1399,9 +1399,9 @@ export function convertContentOfficialDispatch(contentOutputText) {
     let insideQuote = false;
     const result = [];
     for (const line of lines) {
-      const curlyOpen  = (line.match(/[\u201C\u201E]/g) || []).length;
+      const curlyOpen = (line.match(/[\u201C\u201E]/g) || []).length;
       const curlyClose = (line.match(/[\u201D\u201F]/g) || []).length;
-      const straight   = (line.match(/"/g) || []).length;
+      const straight = (line.match(/"/g) || []).length;
 
       if (insideQuote) {
         // Đang trong block: tìm dấu đóng
@@ -1409,7 +1409,7 @@ export function convertContentOfficialDispatch(contentOutputText) {
         continue; // bỏ dòng này dù đóng hay chưa
       }
 
-      const opensByCurly    = curlyOpen > curlyClose;
+      const opensByCurly = curlyOpen > curlyClose;
       const opensByStraight = straight % 2 !== 0 && curlyOpen === 0;
 
       if (opensByCurly) {
@@ -1439,7 +1439,7 @@ export function convertContentOfficialDispatch(contentOutputText) {
       if (m) {
         headings.push({
           line,
-          num:   m[1],
+          num: m[1],
           depth: m[1].split(".").filter(Boolean).length,
         });
       }
@@ -1455,18 +1455,21 @@ export function convertContentOfficialDispatch(contentOutputText) {
     const headings = findHeadings(strippedText);
     if (!headings.length) return [{ " ": fullText }];
 
-    const minDepth   = Math.min(...headings.map((h) => h.depth));
+    const minDepth = Math.min(...headings.map((h) => h.depth));
     const topHeadings = headings.filter((h) => h.depth === minDepth);
 
     const fullLines = fullText.split("\n");
-    const result    = [];
+    const result = [];
 
     // Tìm index dòng trong fullLines khớp với heading line
     // (heading line từ stripped có thể bị cắt bớt nếu có quote mở giữa dòng)
     function findLineIndex(headingLine, startFrom = 0) {
       for (let i = startFrom; i < fullLines.length; i++) {
         // So sánh bằng startsWith vì dòng trong full có thể dài hơn (phần sau dấu ")
-        if (fullLines[i] === headingLine || fullLines[i].startsWith(headingLine)) {
+        if (
+          fullLines[i] === headingLine ||
+          fullLines[i].startsWith(headingLine)
+        ) {
           return i;
         }
       }
@@ -1483,8 +1486,8 @@ export function convertContentOfficialDispatch(contentOutputText) {
     // Từng key → value
     let searchFrom = 0;
     for (let i = 0; i < topHeadings.length; i++) {
-      const current  = topHeadings[i];
-      const next     = topHeadings[i + 1];
+      const current = topHeadings[i];
+      const next = topHeadings[i + 1];
       const startIdx = findLineIndex(current.line, searchFrom);
       if (startIdx === -1) continue;
 
@@ -1492,8 +1495,14 @@ export function convertContentOfficialDispatch(contentOutputText) {
         ? findLineIndex(next.line, startIdx + 1)
         : fullLines.length;
 
-      const valueLines = fullLines.slice(startIdx + 1, endIdx === -1 ? fullLines.length : endIdx);
-      const value = valueLines.join("\n").replace(/^\n+/, "").replace(/\n+$/, "");
+      const valueLines = fullLines.slice(
+        startIdx + 1,
+        endIdx === -1 ? fullLines.length : endIdx,
+      );
+      const value = valueLines
+        .join("\n")
+        .replace(/^\n+/, "")
+        .replace(/\n+$/, "");
 
       result.push({ [current.line]: value });
       searchFrom = startIdx + 1;
@@ -1522,19 +1531,22 @@ export function convertContentOfficialDispatch(contentOutputText) {
 
       for (let a = 0; a < chapterArray.length; a++) {
         const chStart = i4.indexOf(chapterArray[a]);
-        const chEnd   = a < chapterArray.length - 1
-          ? i4.indexOf(chapterArray[a + 1])
-          : i4.length;
-        const chContent = i4.slice(chStart + chapterArray[a].length, chEnd).trim();
+        const chEnd =
+          a < chapterArray.length - 1
+            ? i4.indexOf(chapterArray[a + 1])
+            : i4.length;
+        const chContent = i4
+          .slice(chStart + chapterArray[a].length, chEnd)
+          .trim();
 
         // Parse nội dung trong chương theo min-depth headings
         const chStripped = stripQuotedBlocks(chContent);
-        const chData     = parseByMinDepthHeadings(chContent, chStripped);
+        const chData = parseByMinDepthHeadings(chContent, chStripped);
         data.push({ [chapterArray[a]]: chData });
       }
     }
 
-  // Kiểm tra xem có cấu trúc phần (A. B. C.) không
+    // Kiểm tra xem có cấu trúc phần (A. B. C.) không
   } else if (i4.match(/(như sau|sau đây|lưu ý):\n(A|B|C|D|E|F|G|H)\./gm)) {
     console.log("nếu có phần thứ ...");
 
@@ -1547,19 +1559,22 @@ export function convertContentOfficialDispatch(contentOutputText) {
       if (header) data.push({ " ": header });
 
       for (let a = 0; a < sectionArray.length; a++) {
-        const secStart   = i4.indexOf(sectionArray[a]);
-        const secEnd     = a < sectionArray.length - 1
-          ? i4.indexOf(sectionArray[a + 1])
-          : i4.length;
-        const secContent = i4.slice(secStart + sectionArray[a].length, secEnd).trim();
+        const secStart = i4.indexOf(sectionArray[a]);
+        const secEnd =
+          a < sectionArray.length - 1
+            ? i4.indexOf(sectionArray[a + 1])
+            : i4.length;
+        const secContent = i4
+          .slice(secStart + sectionArray[a].length, secEnd)
+          .trim();
 
         const secStripped = stripQuotedBlocks(secContent);
-        const secData     = parseByMinDepthHeadings(secContent, secStripped);
+        const secData = parseByMinDepthHeadings(secContent, secStripped);
         data.push({ [sectionArray[a]]: secData });
       }
     }
 
-  // Không có chương/phần → parse trực tiếp
+    // Không có chương/phần → parse trực tiếp
   } else {
     console.log("parse trực tiếp theo heading số ...");
     data = parseByMinDepthHeadings(i4, stripped);
@@ -1567,6 +1582,230 @@ export function convertContentOfficialDispatch(contentOutputText) {
 
   console.table("data", data);
   return { data, fullText: i4 };
+}
+
+function createNameLawForPush(lawInfo) {
+  // console.log("createNameLawForPush", new Date(lawInfo["lawDaySign"]).getYear() + 1900);
+  let yearSign = new Date(lawInfo["lawDaySign"]).getYear() + 1900;
+  let lawNumberForPush =
+    lawInfo["lawNumber"] +
+    (!lawInfo["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
+      ? "(" + yearSign + ")"
+      : "");
+
+  return lawNumberForPush;
+}
+
+export async function createChunkEmbedding(law) {
+  const REGEX = {
+    article: /^Điều\s+\d+[a-zA-ZđĐ]*([:.]|$)/i,
+  };
+
+  function cleanText(text = "") {
+    if (text == null) return "";
+
+    if (typeof text !== "string") {
+      try {
+        text = JSON.stringify(text);
+      } catch {
+        text = String(text);
+      }
+    }
+
+    return text
+      .replace(/\u00A0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function createChunk({ law, article, content }) {
+    return {
+      _id: crypto.randomUUID(),
+
+      lawId: createNameLawForPush(law?.info) || "",
+
+      // lawNumber: law?.info?.lawNumber || "",
+
+      lawdateSign: law?.info?.lawDaySign || "",
+
+      lawDayActive: law?.info?.lawDayActive || "",
+
+      lawDescription: law?.info?.lawDescription || "",
+
+      article,
+
+      fullText: [law?.info?.lawDescription, article, content]
+        .filter(Boolean)
+        .join("\n"),
+
+      embedding: null,
+    };
+  }
+  // =========================
+  // PARSE ARTICLE
+  // =========================
+
+  function parseArticle({ law, articleTitle, articleContent }) {
+    return [
+      createChunk({
+        law,
+        article: articleTitle,
+        content: cleanText(articleContent),
+      }),
+    ];
+  }
+  // =========================
+  // WALK NODE (RECURSIVE)
+  // =========================
+
+  function walkNode({ node, law, chunks }) {
+    if (node == null) return;
+
+    // string
+    if (typeof node === "string") {
+      const value = cleanText(node);
+
+      if (!value) return;
+
+      chunks.push(
+        createChunk({
+          law,
+          article: "",
+          content: value,
+        }),
+      );
+
+      return;
+    }
+
+    // array
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        walkNode({
+          node: item,
+          law,
+          chunks,
+        });
+      }
+
+      return;
+    }
+
+    // object
+    if (typeof node === "object") {
+      for (const [key, value] of Object.entries(node)) {
+        const title = cleanText(key);
+
+        // Điều
+        if (REGEX.article.test(title) && typeof value === "string") {
+          chunks.push(
+            ...parseArticle({
+              law,
+              articleTitle: title,
+              articleContent: value,
+            }),
+          );
+
+          continue;
+        }
+
+        // mục 2.1, 2.2...
+        if (typeof value === "string") {
+          chunks.push(
+            createChunk({
+              law,
+              article: title,
+              content: cleanText(value),
+            }),
+          );
+
+          continue;
+        }
+
+        walkNode({
+          node: value,
+          law,
+          chunks,
+        });
+      }
+    }
+  }
+  // =========================
+  // EXTRACT
+  // =========================
+
+  function extractChunksFromLaw(law) {
+    const chunks = [];
+
+    walkNode({
+      node: law.content,
+      law,
+      chunks,
+    });
+
+    return chunks;
+  }
+  // =========================
+  // MAIN
+  // =========================
+
+  let allChunks = [];
+  try {
+    const chunks = extractChunksFromLaw(law);
+
+    allChunks.push(...chunks);
+
+    console.log(`✅ ${law._id} -> ${chunks.length} chunks`);
+  } catch (err) {
+    console.error(`❌ ERROR ${law._id}`);
+    console.error(err);
+    process.exit(1);
+  }
+
+  console.log(`🧩 Total chunks: ${allChunks.length}`);
+
+  for (const obj of allChunks) {
+    if (!obj?.fullText) continue;
+    // console.log(`🔍 fullText chunk: ${obj.fullText || obj._id}`);
+    try {
+      console.log("🚀 API START");
+      const res = await fetch("http://localhost:11434/api/embeddings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "bge-m3",
+          prompt: obj.fullText,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("❌ Ollama error:", errText);
+         throw new Error(errText);
+        // continue;
+      }
+
+      const data = await res.json();
+
+      // 🔥 WRITE NGAY LẬP TỨC
+      // fs.appendFileSync(
+      //   "app/asset/embedded.jsonl",
+      //   JSON.stringify(record) + "\n",
+      //   "utf8"
+      // );
+
+      console.log(
+        `💾 written chunk: ${obj.fullText.split(/\s+/).slice(0, 30).join(" ") || obj._id}`,
+      );
+      obj.embedding = data.embedding;
+    } catch (err) {
+      console.log(obj.fullText);
+      console.error("❌ embed error:",err);
+      process.exit(1);
+    }
+  }
+
+  return allChunks;
 }
 
 export function addJSONFile(lawInfo) {
@@ -1592,25 +1831,40 @@ export function addJSONFile(lawInfo) {
 
 export async function Push(textForMachine, lawInfoPush, fullText) {
   try {
-    const yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
-    let lawNumberForPush =
-      lawInfoPush["lawNumber"] +
-      (!lawInfoPush["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
-        ? "(" + yearSign + ")"
-        : "");
+    // const yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
+    // let lawNumberForPush =
+    //   lawInfoPush["lawNumber"] +
+    //   (!lawInfoPush["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
+    //     ? "(" + yearSign + ")"
+    //     : "");
+    const lawNumberForPush = createNameLawForPush(lawInfoPush);
 
     if (!textForMachine || !lawInfoPush || !lawNumberForPush || !fullText) {
       console.log("Thiếu trường");
 
       return false;
     }
+
+    // let lawEmbedding = [];
+    // try {
+    //   lawEmbedding = await createChunkEmbedding({
+    //     _id: crypto.randomUUID(),
+    //     info: lawInfoPush,
+    //     content: textForMachine,
+    //   });
+    // } catch (err) {
+    //   console.error("❌ Lỗi tạo embedding:", err);
+    //   return false;
+    // }
+
     const res = await fetch("/api/push", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        // dataEmbedding: lawEmbedding,
         dataLaw: textForMachine,
         lawInfo: lawInfoPush,
-        lawNumber: lawNumberForPush,
+        lawNumberForPush: lawNumberForPush,
         contentText: fullText,
       }),
     });
@@ -1624,6 +1878,7 @@ export async function Push(textForMachine, lawInfoPush, fullText) {
       return false;
     } else {
       addJSONFile(lawInfoPush);
+
       // const data = await res.text();
       console.log("✅ Push thành công:");
       return true;

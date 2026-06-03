@@ -1,17 +1,35 @@
 // scripts/extractLawChunks.js
 
-import fs from "fs";
+import fs,{createReadStream } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { NextResponse } from "next/server";
+import { createChunkEmbedding } from "../../main";
+import { chain }            from "stream-chain";  // npm install stream-chain stream-json
+import { parser }           from "stream-json";
+const {streamArray} = require('stream-json/streamers/stream-array.js');
 
-// =========================
 // LOAD DATA
 // =========================
 
-const dbPath = path.join(process.cwd(), "app/asset/hinhsu.json");
+const dbPath = path.join(process.cwd(), "app/asset/LawMachine.LawCollection.json");
 
-const database = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+function loadDatabase() {
+    return new Promise((resolve, reject) => {
+        const results  = [];
+        const pipeline = chain([
+            createReadStream(dbPath),
+            parser(),
+            streamArray(),
+        ]);
+
+        pipeline.on("data", ({ value }) => results.push(value));
+        pipeline.on("end",  ()          => resolve(results));
+        pipeline.on("error", (err)      => reject(err));
+    });
+}
+// const database = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+const database = await loadDatabase();
 
 const OUTPUT_FILE = path.join(process.cwd(), "app/asset/lawChunks.json");
 
@@ -19,173 +37,170 @@ const OUTPUT_FILE = path.join(process.cwd(), "app/asset/lawChunks.json");
 // REGEX
 // =========================
 
-const REGEX = {
-  article: /^Điều\s+\d+[a-zA-ZđĐ]*([:.]|$)/i,
-};
+// const REGEX = {
+//   article: /^Điều\s+\d+[a-zA-ZđĐ]*([:.]|$)/i,
+// };
 
+// function cleanText(text = "") {
+//   if (text == null) return "";
 
-function cleanText(text = "") {
-  if (text == null) return "";
+//   if (typeof text !== "string") {
+//     try {
+//       text = JSON.stringify(text);
+//     } catch {
+//       text = String(text);
+//     }
+//   }
 
-  if (typeof text !== "string") {
-    try {
-      text = JSON.stringify(text);
-    } catch {
-      text = String(text);
-    }
-  }
+//   return text
+//     .replace(/\u00A0/g, " ")
+//     .replace(/\s+/g, " ")
+//     .trim();
+// }
 
-  return text
-    .replace(/\u00A0/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+// function createChunk({
+//   law,
+//   article,
+//   content,
+// }) {
+//   return {
+//     _id: crypto.randomUUID(),
 
+//     lawId: law._id,
 
+//     lawNumber: law?.info?.lawNumber || "",
 
-function createChunk({
-  law,
-  article,
-  content,
-}) {
-  return {
-    _id: crypto.randomUUID(),
+//     lawDescription:
+//       law?.info?.lawDescription || "",
 
-    lawId: law._id,
+//     article,
 
-    lawNumber: law?.info?.lawNumber || "",
+//     fullText: [
+//       law?.info?.lawDescription,
+//       article,
+//       content,
+//     ]
+//       .filter(Boolean)
+//       .join("\n"),
 
-    lawDescription:
-      law?.info?.lawDescription || "",
+//     embedding: null,
+//   };
+// }
+// // =========================
+// // PARSE ARTICLE
+// // =========================
 
-    article,
+// function parseArticle({
+//   law,
+//   articleTitle,
+//   articleContent,
+// }) {
+//   return [
+//     createChunk({
+//       law,
+//       article: articleTitle,
+//       content: cleanText(articleContent),
+//     }),
+//   ];
+// }
+// // =========================
+// // WALK NODE (RECURSIVE)
+// // =========================
 
-    fullText: [
-      law?.info?.lawDescription,
-      article,
-      content,
-    ]
-      .filter(Boolean)
-      .join("\n"),
+// function walkNode({
+//   node,
+//   law,
+//   chunks,
+// }) {
+//   if (node == null) return;
 
-    embedding: null,
-  };
-}
-// =========================
-// PARSE ARTICLE
-// =========================
+//   // string
+//   if (typeof node === "string") {
+//     const value = cleanText(node);
 
-function parseArticle({
-  law,
-  articleTitle,
-  articleContent,
-}) {
-  return [
-    createChunk({
-      law,
-      article: articleTitle,
-      content: cleanText(articleContent),
-    }),
-  ];
-}
-// =========================
-// WALK NODE (RECURSIVE)
-// =========================
+//     if (!value) return;
 
-function walkNode({
-  node,
-  law,
-  chunks,
-}) {
-  if (node == null) return;
+//     chunks.push(
+//       createChunk({
+//         law,
+//         article: "",
+//         content: value,
+//       }),
+//     );
 
-  // string
-  if (typeof node === "string") {
-    const value = cleanText(node);
+//     return;
+//   }
 
-    if (!value) return;
+//   // array
+//   if (Array.isArray(node)) {
+//     for (const item of node) {
+//       walkNode({
+//         node: item,
+//         law,
+//         chunks,
+//       });
+//     }
 
-    chunks.push(
-      createChunk({
-        law,
-        article: "",
-        content: value,
-      }),
-    );
+//     return;
+//   }
 
-    return;
-  }
+//   // object
+//   if (typeof node === "object") {
+//     for (const [key, value] of Object.entries(node)) {
+//       const title = cleanText(key);
 
-  // array
-  if (Array.isArray(node)) {
-    for (const item of node) {
-      walkNode({
-        node: item,
-        law,
-        chunks,
-      });
-    }
+//       // Điều
+//       if (
+//         REGEX.article.test(title) &&
+//         typeof value === "string"
+//       ) {
+//         chunks.push(
+//           ...parseArticle({
+//             law,
+//             articleTitle: title,
+//             articleContent: value,
+//           }),
+//         );
 
-    return;
-  }
+//         continue;
+//       }
 
-  // object
-  if (typeof node === "object") {
-    for (const [key, value] of Object.entries(node)) {
-      const title = cleanText(key);
+//       // mục 2.1, 2.2...
+//       if (typeof value === "string") {
+//         chunks.push(
+//           createChunk({
+//             law,
+//             article: title,
+//             content: cleanText(value),
+//           }),
+//         );
 
-      // Điều
-      if (
-        REGEX.article.test(title) &&
-        typeof value === "string"
-      ) {
-        chunks.push(
-          ...parseArticle({
-            law,
-            articleTitle: title,
-            articleContent: value,
-          }),
-        );
+//         continue;
+//       }
 
-        continue;
-      }
+//       walkNode({
+//         node: value,
+//         law,
+//         chunks,
+//       });
+//     }
+//   }
+// }
+// // =========================
+// // EXTRACT
+// // =========================
 
-      // mục 2.1, 2.2...
-      if (typeof value === "string") {
-        chunks.push(
-          createChunk({
-            law,
-            article: title,
-            content: cleanText(value),
-          }),
-        );
+// export function extractChunksFromLaw(law) {
+//   const chunks = [];
 
-        continue;
-      }
+//   walkNode({
+//     node: law.content,
+//     law,
+//     chunks,
+//   });
 
-      walkNode({
-        node: value,
-        law,
-        chunks,
-      });
-    }
-  }
-}
-// =========================
-// EXTRACT
-// =========================
-
-export function extractChunksFromLaw(law) {
-  const chunks = [];
-
-  walkNode({
-    node: law.content,
-    law,
-    chunks,
-  });
-
-  return chunks;
-}
+//   return chunks;
+// }
 // =========================
 // MAIN
 // =========================
@@ -203,8 +218,13 @@ async function main() {
 
     for (const law of laws) {
       try {
-        const chunks = extractChunksFromLaw(law);
+        const chunks = await createChunkEmbedding(law);
 
+        fs.appendFileSync(
+          "app/asset/embedded.jsonl",
+          chunks.map((x) => JSON.stringify(x)).join("\n") + "\n",
+          "utf8",
+        );
         allChunks.push(...chunks);
 
         console.log(`✅ ${law._id} -> ${chunks.length} chunks`);
@@ -217,51 +237,40 @@ async function main() {
 
     console.log(`🧩 Total chunks: ${allChunks.length}`);
 
-        fs.writeFileSync(
-      OUTPUT_FILE,
-      JSON.stringify(allChunks, null, 2),
-      "utf8"
-    );
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(allChunks, null, 2), "utf8");
 
-    for (const obj of allChunks) {
-      if (!obj?.fullText) continue;
-      // console.log(`🔍 fullText chunk: ${obj.fullText || obj._id}`);
-      try {
-        const res = await fetch("http://localhost:11434/api/embeddings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "bge-m3",
-            prompt: obj.fullText,
-          }),
-        });
+    // for (const obj of allChunks) {
+    //   if (!obj?.fullText) continue;
+    //   // console.log(`🔍 fullText chunk: ${obj.fullText || obj._id}`);
+    //   try {
+    //     const res = await fetch("http://localhost:11434/api/embeddings", {
+    //       method: "POST",
+    //       headers: { "Content-Type": "application/json" },
+    //       body: JSON.stringify({
+    //         model: "bge-m3",
+    //         prompt: obj.fullText,
+    //       }),
+    //     });
 
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error("❌ Ollama error:", errText);
-          continue;
-        }
+    //     if (!res.ok) {
+    //       const errText = await res.text();
+    //       console.error("❌ Ollama error:", errText);
+    //       continue;
+    //     }
 
-        const data = await res.json();
+    //     const data = await res.json();
 
-        const record = {
-          ...obj,
-          embedding: data.embedding,
-        };
+    //     const record = {
+    //       ...obj,
+    //       embedding: data.embedding,
+    //     };
 
-        // 🔥 WRITE NGAY LẬP TỨC
-        fs.appendFileSync(
-          "app/asset/embedded.jsonl",
-          JSON.stringify(record) + "\n",
-          "utf8"
-        );
+    //     console.log(`💾 written chunk: ${obj.fullText || obj._id}`);
 
-        console.log(`💾 written chunk: ${obj.fullText || obj._id}`);
-
-      } catch (err) {
-        console.error("❌ embed error:", err);
-      }
-    }
+    //   } catch (err) {
+    //     console.error("❌ embed error:", err);
+    //   }
+    // }
 
     console.log("🎉 Done streaming embed");
   } catch (err) {
@@ -272,26 +281,25 @@ async function main() {
 // =========================
 
 export async function GET(req) {
-  // const chunks = await main();
+  const chunks = await main();
 
+  //   const jsonl = fs.readFileSync(
+  //   "app/asset/embedded.jsonl",
+  //   "utf8"
+  // );
 
-  const jsonl = fs.readFileSync(
-  "app/asset/embedded.jsonl",
-  "utf8"
-);
+  // const data = jsonl
+  //   .split("\n")
+  //   .filter(line => line.trim())
+  //   .map(line => JSON.parse(line));
 
-const data = jsonl
-  .split("\n")
-  .filter(line => line.trim())
-  .map(line => JSON.parse(line));
+  // fs.writeFileSync(
+  //   "app/asset/embedded1.json",
+  //   JSON.stringify(data, null, 2),
+  //   "utf8"
+  // );
 
-fs.writeFileSync(
-  "app/asset/embedded1.json",
-  JSON.stringify(data, null, 2),
-  "utf8"
-);
-
-console.log(`✅ Converted ${data.length} records`);
+  //  console.log(`✅ Converted ${data.length} records`);
 
   return NextResponse.json({
     // total: chunks.length,
