@@ -172,7 +172,7 @@ headers: {
 "Content-Type": "application/json",
 },
 body: JSON.stringify({
-model: "qwen/qwen3-embedding-4b",
+model: "qwen/qwen3-next-80b-a3b-instruct:free",
 
   messages: [
     ...history,
