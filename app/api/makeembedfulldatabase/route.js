@@ -227,7 +227,7 @@ async function main() {
         );
         allChunks.push(...chunks);
 
-        console.log(`✅ ${law._id} -> ${chunks.length} chunks`);
+        // console.log(`✅ ${law._id} -> ${chunks.length} chunks`);
       } catch (err) {
         console.error(`❌ ERROR ${law._id}`);
         console.error(err);

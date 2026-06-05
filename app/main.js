@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 export function beep() {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -1603,7 +1606,6 @@ export async function createChunkEmbedding(law) {
 
   function cleanText(text = "") {
     if (text == null) return "";
-
     if (typeof text !== "string") {
       try {
         text = JSON.stringify(text);
@@ -1611,92 +1613,100 @@ export async function createChunkEmbedding(law) {
         text = String(text);
       }
     }
-
     return text
       .replace(/\u00A0/g, " ")
       .replace(/\s+/g, " ")
       .trim();
   }
 
-  function createChunk({ law, article, content }) {
-    return {
-      _id: crypto.randomUUID(),
+function splitIntoTextChunks(text, maxChars = 4000) {
+  if (text.length <= maxChars) return null;
 
+  const chunks = [];
+  let current = "";
+
+  // Tách theo câu (dấu . hoặc \n)
+  const sentences = text.split(/(?<=[.।\n])\s*/);
+
+  for (const sentence of sentences) {
+    if ((current + sentence).length > maxChars) {
+      if (current) chunks.push(current.trim());
+      current = sentence;
+    } else {
+      current += " " + sentence;
+    }
+  }
+
+  if (current.trim()) chunks.push(current.trim());
+
+  return chunks.length > 1 ? chunks : null;
+}
+
+  function createChunks({ law, article, content }) {
+    const fullText = [law?.info?.lawDescription, article, content]
+      .filter(Boolean)
+      .join("\n");
+
+    const parts = splitIntoTextChunks(fullText); // null | string[]
+
+    const base = {
       lawId: createNameLawForPush(law?.info) || "",
-
-      // lawNumber: law?.info?.lawNumber || "",
-
       lawdateSign: law?.info?.lawDaySign || "",
-
       lawDayActive: law?.info?.lawDayActive || "",
-
       lawDescription: law?.info?.lawDescription || "",
-
       article,
-
-      fullText: [law?.info?.lawDescription, article, content]
-        .filter(Boolean)
-        .join("\n"),
-
+      fullText,
       embedding: null,
     };
+
+    if (!parts) {
+      // ≤ 4000 từ → 1 chunk, textChunk = null
+      return [{ ...base, _id: crypto.randomUUID(), textChunk: null }];
+    }
+
+    // > 4000 từ → nhiều chunk, mỗi chunk textChunk là 1 string
+      fs.appendFileSync(
+    "app/asset/cuttedChunk.jsonl",
+    JSON.stringify(parts) + "\n",
+  );
+
+
+    return parts.map((part) => ({
+      ...base,
+      _id: crypto.randomUUID(),
+      textChunk: part, // ✅ string
+    }));
   }
-  // =========================
-  // PARSE ARTICLE
-  // =========================
 
   function parseArticle({ law, articleTitle, articleContent }) {
-    return [
-      createChunk({
-        law,
-        article: articleTitle,
-        content: cleanText(articleContent),
-      }),
-    ];
+    return createChunks({
+      law,
+      article: articleTitle,
+      content: cleanText(articleContent),
+    });
   }
-  // =========================
-  // WALK NODE (RECURSIVE)
-  // =========================
 
   function walkNode({ node, law, chunks }) {
     if (node == null) return;
 
-    // string
     if (typeof node === "string") {
       const value = cleanText(node);
-
       if (!value) return;
-
-      chunks.push(
-        createChunk({
-          law,
-          article: "",
-          content: value,
-        }),
-      );
-
+      chunks.push(...createChunks({ law, article: "", content: value }));
       return;
     }
 
-    // array
     if (Array.isArray(node)) {
       for (const item of node) {
-        walkNode({
-          node: item,
-          law,
-          chunks,
-        });
+        walkNode({ node: item, law, chunks });
       }
-
       return;
     }
 
-    // object
     if (typeof node === "object") {
       for (const [key, value] of Object.entries(node)) {
         const title = cleanText(key);
 
-        // Điều
         if (REGEX.article.test(title) && typeof value === "string") {
           chunks.push(
             ...parseArticle({
@@ -1705,105 +1715,99 @@ export async function createChunkEmbedding(law) {
               articleContent: value,
             }),
           );
-
           continue;
         }
 
-        // mục 2.1, 2.2...
         if (typeof value === "string") {
           chunks.push(
-            createChunk({
-              law,
-              article: title,
-              content: cleanText(value),
-            }),
+            ...createChunks({ law, article: title, content: cleanText(value) }),
           );
-
           continue;
         }
 
-        walkNode({
-          node: value,
-          law,
-          chunks,
-        });
+        walkNode({ node: value, law, chunks });
       }
     }
   }
+
+function extractChunksFromLaw(law) {
+  const chunks = [];
+  walkNode({ node: law.content, law, chunks });
+  return chunks; // createChunks đã xử lý split rồi
+}
+
   // =========================
-  // EXTRACT
+  // EMBED
   // =========================
 
-  function extractChunksFromLaw(law) {
-    const chunks = [];
-
-    walkNode({
-      node: law.content,
-      law,
-      chunks,
+  async function embedText(text) {
+    // https://ollama.pixelplaces.net/api/embed
+    // http://localhost:11434/api/embeddings
+    const res = await fetch("http://localhost:11434/api/embeddings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "bge-m3",
+        // input: text,
+        prompt: text,
+      }),
     });
 
-    return chunks;
+    if (!res.ok) {
+      console.error(`Embedding API error: ${text} `);
+      const errText = await res.text();
+      throw new Error(errText);
+    }
+
+    const data = await res.json();
+
+    // console.log("Embedding response:", data.embeddings[0]);
+    // return data.embeddings[0];
+
+    // console.log("Embedding response:", data.embedding);
+    return data.embedding;
   }
+
   // =========================
   // MAIN
   // =========================
 
   let allChunks = [];
+
   try {
     const chunks = extractChunksFromLaw(law);
-
     allChunks.push(...chunks);
-
-    console.log(`✅ ${law._id} -> ${chunks.length} chunks`);
+    // console.log(`✅ ${law._id} -> ${chunks.length} chunks`);
   } catch (err) {
     console.error(`❌ ERROR ${law._id}`);
     console.error(err);
     process.exit(1);
   }
 
-  console.log(`🧩 Total chunks: ${allChunks.length}`);
+  // console.log(`🧩 Total chunks: ${allChunks.length}`);
 
-  for (const obj of allChunks) {
-    if (!obj?.fullText) continue;
-    // console.log(`🔍 fullText chunk: ${obj.fullText || obj._id}`);
-    try {
-      console.log("🚀 API START");
-      const res = await fetch("http://localhost:11434/api/embeddings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "bge-m3",
-          prompt: obj.fullText,
-        }),
-      });
+for (const obj of allChunks) {
+  if (!obj?.fullText) continue;
+  try {
+    // console.log("🚀 API START");
 
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("❌ Ollama error:", errText);
-         throw new Error(errText);
-        // continue;
-      }
+    const textToEmbed = obj.textChunk ?? obj.fullText; // string hoặc null
 
-      const data = await res.json();
+    obj.embedding = await embedText(textToEmbed);
+    // console.log(`💾 written chunk: ${textToEmbed.split(/\s+/).slice(0, 30).join(" ") || obj._id}`);
 
-      // 🔥 WRITE NGAY LẬP TỨC
-      // fs.appendFileSync(
-      //   "app/asset/embedded.jsonl",
-      //   JSON.stringify(record) + "\n",
-      //   "utf8"
-      // );
-
-      console.log(
-        `💾 written chunk: ${obj.fullText.split(/\s+/).slice(0, 30).join(" ") || obj._id}`,
-      );
-      obj.embedding = data.embedding;
-    } catch (err) {
-      console.log(obj.fullText);
-      console.error("❌ embed error:",err);
-      process.exit(1);
-    }
+if (obj.textChunk != null) {
+  fs.appendFileSync(
+    "app/asset/cuttedChunk.jsonl",
+    JSON.stringify(obj) + "\n",
+  );
+}
+    // console.log('JSON.stringify(obj)',JSON.stringify(obj));
+  } catch (err) {
+    console.error("❌ embed error:", err);
+    process.exit(1);
   }
+}
 
   return allChunks;
 }
