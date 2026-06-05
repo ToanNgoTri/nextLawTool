@@ -16,7 +16,7 @@ import { MongoClient } from "mongodb"
 import { log } from "console";
 
 const client = new MongoClient(
-  process.env.MONGODB_URI_AI
+  "mongodb+srv://ngotritoan33:bookertandtajiri33@location.bijatuf.mongodb.net/"
 )
 
 
@@ -168,11 +168,11 @@ const response = await fetch(
 {
 method: "POST",
 headers: {
-"Authorization": process.env.OPENROUTER_API_KEY,
+"Authorization": "Bearer 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",
 "Content-Type": "application/json",
 },
 body: JSON.stringify({
-model: "openai/gpt-4o-mini",
+model: "qwen/qwen3-embedding-4b",
 
   messages: [
     ...history,
