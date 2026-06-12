@@ -1605,15 +1605,25 @@ function createNameLawForPush(lawInfo) {
 const CHECKPOINT_FILE = "app/asset/checkpoint.json";
 
 function readCheckpoint() {
-    try {
+  try {
     return JSON.parse(fs.readFileSync(CHECKPOINT_FILE, "utf8"));
   } catch {
-    return { countedLaw: 0, lastProcessed: -1 };
+    return { 
+      countedLaw: 0, 
+      lastProcessed: -1,
+      countedAllChunks: 0,  // ← đổi tên
+      errorText: "",
+    };
   }
 }
 
-function saveCheckpoint({ countedLaw, lastProcessed }) {
- fs.writeFileSync(CHECKPOINT_FILE, JSON.stringify({ countedLaw, lastProcessed }));
+function saveCheckpoint({ countedLaw, lastProcessed, countedAllChunks, errorText }) {
+  fs.writeFileSync(CHECKPOINT_FILE, JSON.stringify({ 
+    countedLaw, 
+    lastProcessed,
+    countedAllChunks,       // ← đổi tên
+    errorText,
+  }, null, 2));
 }
 
 const REGEX = {
@@ -1629,7 +1639,10 @@ function cleanText(text = "") {
   return text.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function splitIntoTextChunks(text, maxChars = 4000) {
+//                     npm run dev
+   
+//        crt C       CRL S
+function splitIntoTextChunks(text, maxChars = 5000) {
   if (text.length <= maxChars) return null;
 
   const chunks = [];
@@ -1753,98 +1766,98 @@ async function embedText(text) {
 // PROCESS ALL LAWS  ← entry point chính
 // =========================
 
+let isRunning = false;
+
 export async function processAllLaws(laws) {
-  const checkpoint = readCheckpoint();
-  let { countedLaw, lastProcessed } = checkpoint;
-
-  console.log(`▶ Resume từ luật #${countedLaw}, chunk #${lastProcessed + 1}`);
-
-  const database = client.db("LawMachine");
-  const LawContent = database.collection("LawChunks");
-
-  for (let lawIndex = countedLaw; lawIndex < laws.length; lawIndex++) {
-    const law = laws[lawIndex];
-
-    let allChunks;
-    try {
-      allChunks = extractChunksFromLaw(law);
-    } catch (err) {
-      console.error(`❌ Extract lỗi tại luật #${lawIndex} (${law._id}):`, err);
-      saveCheckpoint({ countedLaw: lawIndex, lastProcessed: -1 });
-      process.exit(1);
-    }
-
-    const startChunk = lawIndex === countedLaw ? lastProcessed + 1 : 0;
-
-    console.log(`📖 Luật #${lawIndex} "${law._id}": ${allChunks.length} chunks, bắt đầu từ chunk ${startChunk}`);
-
-    for (let i = startChunk; i < allChunks.length; i++) {
-      const obj = allChunks[i];
-
-      if (!obj?.fullText) {
-        saveCheckpoint({ countedLaw: lawIndex, lastProcessed: i });
-        continue;
-      }
-
-      // 1. Embed
-      try {
-        const textToEmbed = obj.textChunk ?? obj.fullText;
-        obj.embedding = await embedText(textToEmbed);
-      } catch (err) {
-        console.error(`❌ Embed lỗi — luật #${lawIndex}, chunk #${i}:`, err);
-        saveCheckpoint({ countedLaw: lawIndex, lastProcessed: i - 1 });
-        process.exit(1);
-      }
-
-      // 2. MongoDB insert
-      try {
-        await LawContent.insertOne(obj);
-      } catch (err) {
-        console.error(`❌ MongoDB lỗi — luật #${lawIndex}, chunk #${i}:`, err);
-        saveCheckpoint({ countedLaw: lawIndex, lastProcessed: i - 1 });
-        process.exit(1);
-      }
-
-      // 3. Thành công
-      saveCheckpoint({ countedLaw: lawIndex, lastProcessed: i });
-      console.log(`  ✅ chunk [${i}/${allChunks.length - 1}]`);
-    }
-
-    // Luật xong hoàn toàn
-    countedLaw = lawIndex + 1;
-    lastProcessed = -1;
-    saveCheckpoint({ countedLaw, lastProcessed });
-    console.log(`🏁 Xong luật #${lawIndex} (${countedLaw}/${laws.length})`);
-
-    if (countedLaw % 1000 === 0) {
-      console.log(`🎯 Đã xử lý đủ ${countedLaw} luật — dừng batch này`);
-      return;
-    }
+  // ← chặn không cho chạy 2 lần cùng lúc
+  if (isRunning) {
+    console.warn("⚠️ processAllLaws đang chạy rồi, bỏ qua request này");
+    return;
   }
+  isRunning = true;
 
-  saveCheckpoint({ countedLaw: 0, lastProcessed: -1 });
-  console.log(`🎉 Hoàn tất toàn bộ ${laws.length} luật`);
+  try {
+    const checkpoint = readCheckpoint();
+    let { countedLaw, lastProcessed, countedAllChunks, errorText } = checkpoint;
+
+    countedAllChunks = countedAllChunks ?? 0;
+    errorText = errorText ?? "";
+
+    console.log(`▶ Resume từ luật #${countedLaw}, chunk #${lastProcessed + 1}`);
+    console.log(`📊 Tổng chunks đã xử lý: ${countedAllChunks}`);
+
+    const database = client.db("LawMachine");
+    const LawContent = database.collection("LawChunks");
+
+    for (let lawIndex = countedLaw; lawIndex < laws.length; lawIndex++) {
+      const law = laws[lawIndex];
+
+      let allChunks;
+      try {
+        allChunks = extractChunksFromLaw(law);
+      } catch (err) {
+        console.error(`❌ Extract lỗi tại luật #${lawIndex} (${law._id}):`, err);
+        saveCheckpoint({ countedLaw: lawIndex, lastProcessed: -1, countedAllChunks, errorText: law._id });
+        // process.exit(1);
+      }
+
+      const startChunk = lawIndex === countedLaw ? lastProcessed + 1 : 0;
+
+      console.log(`📖 Luật #${lawIndex} "${law._id}": ${allChunks.length} chunks, bắt đầu từ chunk ${startChunk}`);
+
+      for (let i = startChunk; i < allChunks.length; i++) {
+        const obj = allChunks[i];
+
+if (!obj?.fullText) {
+  // ← KHÔNG ghi checkpoint ở đây, không thay đổi lastProcessed
+  continue;
 }
+        const textToEmbed = obj.textChunk ?? obj.fullText;
 
+        try {
+          obj.embedding = await embedText(textToEmbed);
+        } catch (err) {
+          console.error(`❌ Embed lỗi — luật #${lawIndex}, chunk #${i}:`, err);
+          saveCheckpoint({ countedLaw: lawIndex, lastProcessed: i - 1, countedAllChunks, errorText: textToEmbed });
+          // process.exit(1);
+        }
+
+        try {
+          await LawContent.insertOne(obj);
+        } catch (err) {
+          console.error(`❌ MongoDB lỗi — luật #${lawIndex}, chunk #${i}:`, err);
+          saveCheckpoint({ countedLaw: lawIndex, lastProcessed: i - 1, countedAllChunks, errorText: textToEmbed });
+          // process.exit(1);
+        }
+
+        countedAllChunks += 1;
+        saveCheckpoint({ countedLaw: lawIndex, lastProcessed: i, countedAllChunks, errorText: "" });
+        console.log(`  ✅ chunk [${i}/${allChunks.length - 1}] — tổng chunks: ${countedAllChunks}`);
+      }
+
+      countedLaw = lawIndex + 1;
+      lastProcessed = -1;
+      saveCheckpoint({ countedLaw, lastProcessed, countedAllChunks, errorText: "" });
+      console.log(`🏁 Xong luật #${lawIndex} (${countedLaw}/${laws.length}) — tổng chunks: ${countedAllChunks}`);
+
+      // if (countedLaw % 1000 === 0) {
+      //   console.log(`🎯 Đã xử lý đủ ${countedLaw} luật — dừng batch này`);
+      //   return;
+      // }
+    }
+
+    saveCheckpoint({ countedLaw: 0, lastProcessed: -1, countedAllChunks, errorText: "" });
+    console.log(`🎉 Hoàn tất toàn bộ ${laws.length} luật — tổng chunks: ${countedAllChunks}`);
+
+  } finally {
+    isRunning = false; // ← luôn reset dù thành công hay lỗi
+  }
+}
+// isRunning reset về false trong finally để lần sau gọi lại được bình thường sau khi xử lý xong.
 // =========================
 // createChunkEmbedding — giữ lại nếu cần dùng đơn lẻ
 // =========================
 
-export async function createChunkEmbedding(law) {
-  const chunks = extractChunksFromLaw(law);  // ✅ dùng hàm đã kéo ra ngoài
-
-  const database = client.db("LawMachine");
-  const LawContent = database.collection("LawChunks");
-
-  for (const obj of chunks) {
-    if (!obj?.fullText) continue;
-    const textToEmbed = obj.textChunk ?? obj.fullText;
-    obj.embedding = await embedText(textToEmbed);
-    await LawContent.insertOne(obj);
-  }
-
-  return chunks;
-}
 
 export function addJSONFile(lawInfo) {
   let yearSign = parseInt(lawInfo["lawDaySign"].getYear()) + 1900;
