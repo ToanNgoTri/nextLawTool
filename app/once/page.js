@@ -39,6 +39,7 @@ export default function Page() {
   const [contentOutputText, setContentOutput] = useState("");
   const [lawInfoPush, setLawInfoPush] = useState({});
   const [lawNameDisplayText, setLawNameDisplayText] = useState("");
+  const [lawDayActiveText, setLawDayActive] = useState("");
 
   const [fullText, setFullText] = useState("");
   const [textForMachine, setTextForMachine] = useState({});
@@ -82,7 +83,7 @@ export default function Page() {
         setLawRelated(res.data.lawRelated);
         setRoleSign(res.data.roleSign);
         setContentInput(res.data.content);
-      })
+      }),
     );
   }
 
@@ -157,7 +158,8 @@ export default function Page() {
       //   ""
       // );
 
-      lawNameDisplay = lawKind + " " + lawNameDisplay + " năm " + lawDaySign.match(/\d+$/i)[0];
+      lawNameDisplay =
+        lawKind + " " + lawNameDisplay + " năm " + lawDaySign.match(/\d+$/i)[0];
     } else if (
       lawKind.match(/hợp nhất$/gim) &&
       lawNameDisplay.match(/(Bộ )*Luật.*/gim)
@@ -193,7 +195,7 @@ export default function Page() {
           lawNameDisplay,
           lawDescription,
           lawKind,
-          unitPublish
+          unitPublish,
         );
         setContentOutput(result.partTwo);
       } else {
@@ -207,12 +209,19 @@ export default function Page() {
           ObjectLawPair,
           lawDaySign,
           lawNameDisplay,
-          lawDescription
+          lawDescription,
         );
         // console.log('infoLaw',result);
         setContentOutput(result.partTwo);
       }
       setLawInfoPush(result.lawInfo);
+
+      const daySign = result.lawInfo["lawDaySign"];
+      setLawDaySign(
+        daySign instanceof Date && !isNaN(daySign)
+          ? daySign.toISOString()
+          : (daySign ?? ""),
+      );
 
       let yearSign = parseInt(result.lawInfo["lawDaySign"].getYear()) + 1900;
       let lawNumberForPush =
@@ -230,10 +239,20 @@ export default function Page() {
       }
 
       // console.log(lawNameDisplay);
-      
-      setLawDescription(result.lawInfo["lawDescription"]) ;
-      setLawNameDisplayText(result.lawInfo["lawKind"].match(/luật/img)? lawNameDisplay : result.lawInfo["lawNameDisplay"]);
 
+      setLawDescription(result.lawInfo["lawDescription"]);
+      setLawNameDisplayText(
+        result.lawInfo["lawKind"].match(/luật/gim)
+          ? lawNameDisplay
+          : result.lawInfo["lawNameDisplay"],
+      );
+
+      const dayActive = result.lawInfo["lawDayActive"];
+      setLawDayActive(
+        dayActive instanceof Date && !isNaN(dayActive)
+          ? dayActive.toISOString()
+          : (dayActive ?? ""),
+      );
     } catch (e) {
       beep();
       console.log(e);
@@ -241,16 +260,16 @@ export default function Page() {
   }
 
   async function clickToConvertContent(contentOutputText) {
-    console.log('lawDayActive',lawInfoPush.lawDayActive);
-    console.log('lawDaySign',lawInfoPush.lawDaySign);
-    console.log('lawKind',lawInfoPush.lawKind);
-    console.log('lawNumber',lawInfoPush.lawNumber);
-    console.log('lawNameDisplay',lawInfoPush.lawNameDisplay);
-    console.log('lawDescription',lawInfoPush.lawDescription);
-    console.log('unitPublish',lawInfoPush.unitPublish);
-    console.log('nameSign',lawInfoPush.nameSign);
-    console.log('roleSign',lawInfoPush.roleSign);
-    console.log('lawRelated',lawInfoPush.lawRelated);
+    console.log("lawDayActive", lawInfoPush.lawDayActive);
+    console.log("lawDaySign", lawInfoPush.lawDaySign);
+    console.log("lawKind", lawInfoPush.lawKind);
+    console.log("lawNumber", lawInfoPush.lawNumber);
+    console.log("lawNameDisplay", lawInfoPush.lawNameDisplay);
+    console.log("lawDescription", lawInfoPush.lawDescription);
+    console.log("unitPublish", lawInfoPush.unitPublish);
+    console.log("nameSign", lawInfoPush.nameSign);
+    console.log("roleSign", lawInfoPush.roleSign);
+    console.log("lawRelated", lawInfoPush.lawRelated);
 
     let result;
     lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/gim)
@@ -259,8 +278,6 @@ export default function Page() {
 
     setFullText(result.fullText);
     setTextForMachine(result.data);
-
-
   }
 
   useEffect(() => {
@@ -270,13 +287,21 @@ export default function Page() {
       lawNameDisplay: lawNameDisplayText,
       lawKind: lawKindText,
       lawNumber: lawNumberText,
+      lawDayActive: lawDayActiveText ? new Date(lawDayActiveText) : null,
+       lawDaySign: lawDaySignText ? new Date(lawDaySignText) : null,
     });
 
-    if(Object.keys(lawInfoPush).length > 0){
-
+    if (Object.keys(lawInfoPush).length > 0) {
     }
-
-  }, [lawDescriptionText, lawNameDisplayText, lawDaySignText, lawKindText, lawNumberText]);
+  }, [
+    lawDescriptionText,
+    lawNameDisplayText,
+    lawDaySignText,
+    lawKindText,
+    lawNumberText,
+    lawDayActiveText,
+    lawDaySignText
+  ]);
 
   function goToStartInput() {
     window.scrollTo({
@@ -372,6 +397,13 @@ export default function Page() {
             id={styles.lawDaySign}
             value={lawDaySignText}
             onChange={(e) => setLawDaySign(e.target.value)}
+          ></textarea>
+          <p>lawDayActive</p>
+          <textarea
+            className={styles.input_area}
+            id={styles.lawDayActive}
+            value={lawDayActiveText}
+            onChange={(e) => setLawDayActive(e.target.value)}
           ></textarea>
           <p>LawNameDisplay</p>
           <textarea
