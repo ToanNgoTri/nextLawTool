@@ -94,24 +94,24 @@ export default function Page() {
 
   // }, [contentInputText])
 
-  function beep() {
-    const audioContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
+  // function beep() {
+  //   const audioContext = new (window.AudioContext ||
+  //     window.webkitAudioContext)();
 
-    // Tạo một oscillator (dao động) để phát âm thanh
-    const oscillator = audioContext.createOscillator();
+  //   // Tạo một oscillator (dao động) để phát âm thanh
+  //   const oscillator = audioContext.createOscillator();
 
-    // Cài đặt tần số của âm thanh
-    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Tần số 440 Hz (A4)
+  //   // Cài đặt tần số của âm thanh
+  //   oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Tần số 440 Hz (A4)
 
-    // Kết nối oscillator đến output (loa)
-    oscillator.connect(audioContext.destination);
+  //   // Kết nối oscillator đến output (loa)
+  //   oscillator.connect(audioContext.destination);
 
-    // Bắt đầu phát âm thanh
-    oscillator.start();
+  //   // Bắt đầu phát âm thanh
+  //   oscillator.start();
 
-    oscillator.stop(audioContext.currentTime + 1);
-  }
+  //   oscillator.stop(audioContext.currentTime + 1);
+  // }
 
   let lawInfo = {};
   let contentText = "";
