@@ -1855,6 +1855,8 @@ export async function Push(textForMachine, lawInfoPush, fullText) {
     // console.log('res',res);
 
     const data = await res.json();
+    
+        addJSONFile(lawInfoPush);
 
 
       alert("Successfully embedded law!");
@@ -1865,7 +1867,7 @@ export async function Push(textForMachine, lawInfoPush, fullText) {
         alert("Failed to embed law: " + errorText);
         return;
       } else {
-        addJSONFile(lawInfoPush);
+
       }
 
       // const data = await res.text();
