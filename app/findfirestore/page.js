@@ -1,68 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// ─── API Route Handler (app/api/chunks/route.js) ─────────────────────────────
-// Tạo file này tại: app/api/chunks/route.js
-/*
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import { NextResponse } from "next/server";
-
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-const db = getFirestore();
-
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
-  const lawId = searchParams.get("lawId");
-  const limit = parseInt(searchParams.get("limit") || "20");
-
-  try {
-    let results = [];
-
-    if (id) {
-      // Tìm theo _id field (không phải document ID)
-      const snapshot = await db
-        .collection("chunks")
-        .where("_id", "==", id)
-        .limit(1)
-        .get();
-
-      results = snapshot.docs.map((doc) => ({ docId: doc.id, ...doc.data(), embedding: "[vector<1024>]" }));
-    } else if (lawId) {
-      // Tìm theo lawId
-      const snapshot = await db
-        .collection("chunks")
-        .where("lawId", "==", lawId)
-        .limit(limit)
-        .get();
-
-      results = snapshot.docs.map((doc) => ({ docId: doc.id, ...doc.data(), embedding: "[vector<1024>]" }));
-    } else {
-      // Lấy tất cả (có giới hạn)
-      const snapshot = await db.collection("chunks").limit(limit).get();
-      results = snapshot.docs.map((doc) => ({ docId: doc.id, ...doc.data(), embedding: "[vector<1024>]" }));
-    }
-
-    return NextResponse.json({ success: true, count: results.length, data: results });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
-*/
-
-// ─── Page Component ───────────────────────────────────────────────────────────
 export default function ChunksPage() {
-  const [mode, setMode] = useState("id"); // "id" | "lawId" | "all"
+  const [mode, setMode] = useState("id");
   const [inputId, setInputId] = useState("899daae2-1ca3-4453-ac0d-01ac97015972");
   const [inputLawId, setInputLawId] = useState("");
   const [limit, setLimit] = useState(20);
@@ -70,6 +11,24 @@ export default function ChunksPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [totalCount, setTotalCount] = useState(null);
+  const [totalLoading, setTotalLoading] = useState(true);
+
+  // Lấy tổng số documents khi render lần đầu
+  useEffect(() => {
+    async function fetchTotal() {
+      try {
+        const res = await fetch("/api/findfirestore?countOnly=true");
+        const json = await res.json();
+        if (json.success) setTotalCount(json.total);
+      } catch {
+        setTotalCount(null);
+      } finally {
+        setTotalLoading(false);
+      }
+    }
+    fetchTotal();
+  }, []);
 
   async function fetchData() {
     setLoading(true);
@@ -84,7 +43,6 @@ export default function ChunksPage() {
 
       const res = await fetch(url);
       const json = await res.json();
-
       if (!json.success) throw new Error(json.error);
       setData(json);
     } catch (err) {
@@ -97,18 +55,32 @@ export default function ChunksPage() {
   function formatDate(dateStr) {
     if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
+      day: "2-digit", month: "2-digit", year: "numeric",
     });
   }
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>🔍 Firestore Chunks Viewer</h1>
-      <p style={styles.subtitle}>Collection: <code style={styles.code}>chunks</code></p>
+      <div style={styles.headerRow}>
+        <div>
+          <h1 style={styles.title}>🔍 Firestore Chunks Viewer</h1>
+          <p style={styles.subtitle}>Collection: <code style={styles.code}>chunks</code></p>
+        </div>
 
-      {/* ── Filter Panel ── */}
+        {/* Thống kê tổng */}
+        <div style={styles.statBox}>
+          <div style={styles.statLabel}>Tổng documents</div>
+          {totalLoading ? (
+            <div style={styles.statValueLoading}>Đang đếm...</div>
+          ) : totalCount !== null ? (
+            <div style={styles.statValue}>{totalCount.toLocaleString("vi-VN")}</div>
+          ) : (
+            <div style={styles.statValueError}>—</div>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Panel */}
       <div style={styles.card}>
         <div style={styles.modeRow}>
           {["id", "lawId", "all"].map((m) => (
@@ -141,7 +113,7 @@ export default function ChunksPage() {
           )}
           {mode !== "id" && (
             <input
-              style={{ ...styles.input, width: 80 }}
+              style={{ ...styles.input, width: 80, flex: "none" }}
               type="number"
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value))}
@@ -156,18 +128,17 @@ export default function ChunksPage() {
         </div>
       </div>
 
-      {/* ── Error ── */}
-      {error && (
-        <div style={styles.errorBox}>
-          ❌ {error}
-        </div>
-      )}
+      {/* Error */}
+      {error && <div style={styles.errorBox}>❌ {error}</div>}
 
-      {/* ── Results ── */}
+      {/* Results */}
       {data && (
         <>
           <div style={styles.resultMeta}>
             Tìm thấy <strong>{data.count}</strong> document{data.count !== 1 ? "s" : ""}
+            {totalCount !== null && (
+              <span style={styles.resultMetaSub}> / {totalCount.toLocaleString("vi-VN")} tổng</span>
+            )}
           </div>
 
           {data.data.length === 0 && (
@@ -179,10 +150,7 @@ export default function ChunksPage() {
             const isExpanded = expandedId === key;
             return (
               <div key={key} style={styles.docCard}>
-                <div
-                  style={styles.docHeader}
-                  onClick={() => setExpandedId(isExpanded ? null : key)}
-                >
+                <div style={styles.docHeader} onClick={() => setExpandedId(isExpanded ? null : key)}>
                   <div>
                     <span style={styles.lawIdBadge}>{item.lawId || "—"}</span>
                     <span style={styles.articleText}>{item.article || "—"}</span>
@@ -227,12 +195,22 @@ function Field({ label, value, mono }) {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = {
   container: { maxWidth: 860, margin: "0 auto", padding: "32px 16px", fontFamily: "system-ui, sans-serif" },
-  title: { fontSize: 24, fontWeight: 700, marginBottom: 4, color: "#ececec" },
-  subtitle: { color: "#666", marginBottom: 24, fontSize: 14 },
+
+  headerRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 16 },
+  title: { fontSize: 24, fontWeight: 700, marginBottom: 4, color: "#111" },
+  subtitle: { color: "#666", fontSize: 14, margin: 0 },
   code: { background: "#f0f0f0", padding: "2px 6px", borderRadius: 4, fontFamily: "monospace" },
+
+  statBox: {
+    background: "#eff6ff", borderWidth: 1, borderStyle: "solid", borderColor: "#bfdbfe",
+    borderRadius: 10, padding: "12px 20px", textAlign: "center", minWidth: 140,
+  },
+  statLabel: { fontSize: 11, color: "#3b82f6", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 },
+  statValue: { fontSize: 28, fontWeight: 700, color: "#1d4ed8", lineHeight: 1 },
+  statValueLoading: { fontSize: 13, color: "#93c5fd", fontStyle: "italic" },
+  statValueError: { fontSize: 20, color: "#93c5fd" },
 
   card: { background: "#fff", borderWidth: 1, borderStyle: "solid", borderColor: "#e5e7eb", borderRadius: 10, padding: 20, marginBottom: 20 },
   modeRow: { display: "flex", gap: 8, marginBottom: 16 },
@@ -257,12 +235,12 @@ const styles = {
   errorBox: { background: "#fef2f2", borderWidth: 1, borderStyle: "solid", borderColor: "#fca5a5", borderRadius: 8, padding: 14, color: "#b91c1c", marginBottom: 16 },
   emptyBox: { textAlign: "center", color: "#9ca3af", padding: 40 },
   resultMeta: { fontSize: 13, color: "#6b7280", marginBottom: 12 },
+  resultMetaSub: { color: "#9ca3af" },
 
   docCard: { borderWidth: 1, borderStyle: "solid", borderColor: "#e5e7eb", borderRadius: 10, marginBottom: 12, overflow: "hidden" },
   docHeader: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "12px 16px", cursor: "pointer", background: "#f9fafb",
-    userSelect: "none",
+    padding: "12px 16px", cursor: "pointer", background: "#f9fafb", userSelect: "none",
   },
   lawIdBadge: {
     background: "#dbeafe", color: "#1d4ed8", fontSize: 12, fontWeight: 600,
@@ -274,7 +252,7 @@ const styles = {
   docBody: { padding: "16px", borderTopWidth: 1, borderTopStyle: "solid", borderTopColor: "#e5e7eb", display: "flex", flexDirection: "column", gap: 10 },
   fieldGroup: { display: "flex", gap: 8, alignItems: "flex-start" },
   fieldLabel: { minWidth: 140, fontSize: 12, color: "#6b7280", fontWeight: 600, paddingTop: 1 },
-  fieldValue: { fontSize: 13, color: "white", wordBreak: "break-all" },
+  fieldValue: { fontSize: 13, color: "#111", wordBreak: "break-all" },
   mono: { fontFamily: "monospace", fontSize: 12, color: "#6b7280" },
   fullTextBox: {
     flex: 1, background: "#f8fafc",

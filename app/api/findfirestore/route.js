@@ -45,6 +45,11 @@ export async function GET(request) {
         .get();
     }
 
+    if (searchParams.get("countOnly") === "true") {
+  const countSnap = await db.collection("chunks").count().get();
+  return NextResponse.json({ success: true, total: countSnap.data().count });
+}
+
     const data = snapshot.docs.map((doc) => {
       const d = doc.data();
       return {
