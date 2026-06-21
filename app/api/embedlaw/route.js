@@ -1,33 +1,67 @@
-const { streamArray } = require("stream-json/streamers/stream-array.js");
 import { processAllLaws } from "../../main";
-import { MongoClient } from "mongodb";
 import { NextResponse } from "next/server";
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
-const client = new MongoClient(process.env.MONGODB_URI);
+// ✅ Khởi tạo Firebase Admin chỉ 1 lần
+if (!getApps().length) {
+  const serviceAccount = {
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  };
+
+  initializeApp({
+    credential: cert(serviceAccount),
+    databaseURL: "https://project2-197c0-default-rtdb.firebaseio.com",
+  });
+}
+
+const db = getFirestore();
 
 // ✅ Chỉ chạy khi bấm gọi API
 export async function POST(req) {
-
   const body = await req.json();
   // console.log("🚀 Received request with body:", body);
   const law = body.law || [];
   let result = await processAllLaws(law);
-  // console.log(`🎉 Hoàn tất `,result);
+  // console.log(`🎉 Hoàn tất `, result);
 
-
-    async function pushLawChunk(lawEmbedding) {
-    // console.log("Pushing law chunks to MongoDB...", lawEmbedding);
+  async function pushLawChunk(lawEmbedding) {
+    // console.log("Pushing law chunks to Firestore...", lawEmbedding);
     try {
-      const database = client.db("LawMachine");
-      const LawContent = database.collection("LawChunks");
-      await LawContent.insertMany(lawEmbedding);
+      const colRef = db.collection("chunks");
+
+      // Firestore batch giới hạn 500 thao tác/lần -> chia nhỏ
+      const chunkSize = 500;
+      for (let i = 0; i < lawEmbedding.length; i += chunkSize) {
+        const batch = db.batch();
+        const chunk = lawEmbedding.slice(i, i + chunkSize);
+
+        chunk.forEach((item) => {
+          const docRef = item._id
+            ? colRef.doc(String(item._id))
+            : colRef.doc();
+
+          const { embedding, ...rest } = item;
+
+          batch.set(docRef, {
+            ...rest,
+            // Nếu có field embedding (vector), dùng FieldValue.vector
+            ...(embedding ? { embedding: FieldValue.vector(embedding) } : {}),
+          });
+        });
+
+        await batch.commit();
+      }
+
       return true;
     } catch (error) {
-      console.error("❌ Error in pushLawSearchDescription:", error);
+      console.error("❌ Error in pushLawChunk:", error);
       return false;
     }
   }
 
-    const ok4 = await pushLawChunk(result);
-  return NextResponse.json({  success: ok4 });
+  const ok4 = await pushLawChunk(result);
+  return NextResponse.json({ success: ok4 });
 }
