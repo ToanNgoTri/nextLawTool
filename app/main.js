@@ -1,9 +1,3 @@
-// import fs from "fs";
-// import path from "path";
-// import { MongoClient } from "mongodb";
-
-// const client = new MongoClient("mongodb://thuvienphapluat:ZvQn9683p8NnPXFMdR1VX53HTK3Da1WqyXJpvtgMMASTRdDkyu87lFAL7aR5DiiN@46.225.145.42:6980/?directConnection=true");
-
 export function beep() {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -907,12 +901,16 @@ export async function getNormalTextInfo(
 
   lawDaySign = addDaysToDate(lawDaySign, 0);
 
-  // console.log("lawRelatedText", lawRelatedText);
+  // console.log("lawDescription", lawDescription);
 
-  lawDescription = lawRelatedText
-    .match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
-    .replace(/\.$/gim, "")
-    .trim();
+  lawDescription = lawRelatedText.match(
+    new RegExp(`(?<=ban hành )(.*)\.$`, "m"),
+  )
+    ? lawRelatedText
+        .match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
+        .replace(/\.$/gim, "")
+        .trim()
+    : lawDescription;
 
   // console.log('lawDescription', lawDescription);
 
@@ -1381,7 +1379,6 @@ export function convertContent(contentOutputText) {
 export function convertContentOfficialDispatch(contentOutputText) {
   console.log("convertContentOfficialDispatch");
 
-  // ─── Normalize ────────────────────────────────────────────────────────────
   let i1 = contentOutputText.replace(
     /^Câu( |\u00A0)+(\d+\w?)\.(.*)/gim,
     "Câu $2:$3",
@@ -1389,17 +1386,8 @@ export function convertContentOfficialDispatch(contentOutputText) {
   let i2 = i1.replace(/­/gm, "");
   let i3 = i2.replace(/\[\d*\]/gim, "");
   let i4 = i3.replace(/\u00A0/gim, " ");
-
   contentText = i4;
 
-  // ─── Helper: strip quoted blocks ─────────────────────────────────────────
-  // Duyệt từng dòng, theo dõi trạng thái insideQuote.
-  // Dòng nào nằm trong "..." → bỏ qua (không đưa vào stripped).
-  // Hỗ trợ " " thẳng, " " cong (U+201C/D), „ ‟ (U+201E/F).
-  // Logic đếm chẵn/lẻ dấu " trên mỗi dòng:
-  //   - Ngoài quote: dấu " lẻ = mở block chưa đóng → vào insideQuote
-  //   - Trong quote: dấu " lẻ = đóng block → thoát insideQuote
-  //   - Dấu " chẵn = inline quote đóng mở cùng dòng → giữ nguyên
   function stripQuotedBlocks(text) {
     const lines = text.split("\n");
     let insideQuote = false;
@@ -1408,133 +1396,186 @@ export function convertContentOfficialDispatch(contentOutputText) {
       const curlyOpen = (line.match(/[\u201C\u201E]/g) || []).length;
       const curlyClose = (line.match(/[\u201D\u201F]/g) || []).length;
       const straight = (line.match(/"/g) || []).length;
-
       if (insideQuote) {
-        // Đang trong block: tìm dấu đóng
         if (curlyClose > 0 || straight % 2 !== 0) insideQuote = false;
-        continue; // bỏ dòng này dù đóng hay chưa
+        continue;
       }
-
       const opensByCurly = curlyOpen > curlyClose;
       const opensByStraight = straight % 2 !== 0 && curlyOpen === 0;
-
       if (opensByCurly) {
-        // Giữ phần trước dấu mở curly
         const before = line.slice(0, line.search(/[\u201C\u201E]/)).trimEnd();
         if (before) result.push(before);
         insideQuote = true;
       } else if (opensByStraight) {
-        // Giữ phần trước dấu " thẳng đầu tiên
         const before = line.slice(0, line.indexOf('"')).trimEnd();
         if (before) result.push(before);
         insideQuote = true;
       } else {
-        result.push(line); // không có block mở → giữ nguyên
+        result.push(line);
       }
     }
     return result.join("\n");
   }
 
-  // ─── Helper: tìm tất cả heading lines trong stripped text ────────────────
-  // Heading = dòng bắt đầu bằng số (nguyên hoặc sub như 9.1.) theo sau là . hoặc :
-  function findHeadings(strippedText) {
-    const lines = strippedText.split("\n");
+  function findHeadings(strippedText, fullText) {
+    const strippedLines = strippedText.split("\n");
+    const fullLines = fullText.split("\n");
     const headings = [];
-    lines.forEach((line) => {
-      const m = line.match(/^(\d+(?:\.\d+)*)[\.:]( |$)/);
-      if (m) {
-        headings.push({
-          line,
-          num: m[1],
-          depth: m[1].split(".").filter(Boolean).length,
-        });
+    let currentRomanDepth = null;
+
+    strippedLines.forEach((line) => {
+      let num, depth;
+
+      const mCau = line.match(/^(Câu( hỏi)?[\s\u00A0]+\d+\w*)[\.:]/);
+      if (mCau) {
+        num = mCau[1];
+        depth = currentRomanDepth !== null ? currentRomanDepth + 1 : 0;
+        // Tìm dòng gốc trong fullText theo prefix 30 ký tự
+        const prefix = line.slice(0, 30);
+        const fullLine = fullLines.find((fl) => fl.startsWith(prefix)) || line;
+        headings.push({ line: fullLine, num, depth });
+        return;
+      }
+
+      const mDieu = line.match(/^(Điều\s+\d+)[\.:]/);
+      if (mDieu) {
+        num = mDieu[1];
+        depth = 1;
+        currentRomanDepth = null;
+        const prefix = line.slice(0, 30);
+        const fullLine = fullLines.find((fl) => fl.startsWith(prefix)) || line;
+        headings.push({ line: fullLine, num, depth });
+        return;
+      }
+
+      const mRoman = line.match(/^((?:V|I|X)+)\.(.*)/);
+      if (mRoman) {
+        num = mRoman[1];
+        currentRomanDepth = 1;
+        depth = currentRomanDepth;
+        const prefix = line.slice(0, 30);
+        const fullLine = fullLines.find((fl) => fl.startsWith(prefix)) || line;
+        headings.push({ line: fullLine, num, depth });
+        return;
+      }
+
+      const mNum = line.match(/^(\d+(?:\.\d+)*)[\.:]( |$)/);
+      if (mNum) {
+        num = mNum[1];
+        const levels = num.split(".").filter(Boolean).length;
+        depth =
+          currentRomanDepth !== null ? currentRomanDepth + levels : levels + 1;
+        const prefix = line.slice(0, 30);
+        const fullLine = fullLines.find((fl) => fl.startsWith(prefix)) || line;
+        headings.push({ line: fullLine, num, depth });
       }
     });
+
     return headings;
   }
 
-  // ─── Helper: parse text thành [{key: value}] theo min-depth headings ─────
-  // Min-depth = cấp cao nhất có trong văn bản → làm key.
-  // Value = toàn bộ nội dung từ sau key đến trước key tiếp theo (cùng cấp).
-  // Phần trước key đầu tiên → { " ": ... }
-  function parseByMinDepthHeadings(fullText, strippedText) {
-    const headings = findHeadings(strippedText);
-    if (!headings.length) return [{ " ": fullText }];
+  // ─── Build tree từ headings + fullText ───────────────────────────────────
+  // Trả về object lồng nhau: key = heading line, value = object con hoặc string
+  function buildTree(fullText, strippedText) {
+    const headings = findHeadings(strippedText, fullText);
+    if (!headings.length) return { " ": fullText };
+
+    const fullLines = fullText.split("\n");
+
+    function findLineIndex(headingLine, startFrom = 0) {
+      // Chỉ dùng 30 ký tự đầu để match, tránh lỗi khi dòng bị strip/thay đổi
+      const prefix = headingLine.slice(0, 30);
+      for (let i = startFrom; i < fullLines.length; i++) {
+        if (fullLines[i].startsWith(prefix)) return i;
+      }
+      return -1;
+    }
+    // Đệ quy build object cho một nhóm headings cùng depth
+
+    function buildLevel(items, parentDepth) {
+      const result = [];
+
+      for (let i = 0; i < items.length; i++) {
+        const current = items[i];
+        const next = items[i + 1];
+
+        const startIdx = findLineIndex(current.line);
+        const endIdx = next
+          ? findLineIndex(next.line, startIdx + 1)
+          : fullLines.length;
+
+        const contentLines = fullLines.slice(
+          startIdx + 1,
+          endIdx === -1 ? fullLines.length : endIdx,
+        );
+
+        const contentText = contentLines.join("\n").trim();
+
+        const childHeadings = headings.filter((h) => {
+          const idx = findLineIndex(h.line, startIdx + 1);
+
+          return (
+            idx > startIdx &&
+            idx < (endIdx === -1 ? fullLines.length : endIdx) &&
+            h.depth === parentDepth + 1 &&
+            !isSubNumber(current.num, h.num)
+          );
+        });
+
+        if (childHeadings.length) {
+          result.push({
+            [current.line]: buildLevel(childHeadings, parentDepth + 1),
+          });
+        } else {
+          result.push({
+            [current.line]: contentText,
+          });
+        }
+      }
+
+      return result;
+    }
+    // Check xem h.num có phải sub-number của parent không
+    // VD: parent="14", child="14.1" → true
+    // VD: parent="I", child="1" → false
+    function isSubNumber(parentNum, childNum) {
+      return childNum.startsWith(parentNum + ".");
+    }
 
     const minDepth = Math.min(...headings.map((h) => h.depth));
     const topHeadings = headings.filter((h) => h.depth === minDepth);
 
-    const fullLines = fullText.split("\n");
-    const result = [];
-
-    // Tìm index dòng trong fullLines khớp với heading line
-    // (heading line từ stripped có thể bị cắt bớt nếu có quote mở giữa dòng)
-    function findLineIndex(headingLine, startFrom = 0) {
-      for (let i = startFrom; i < fullLines.length; i++) {
-        // So sánh bằng startsWith vì dòng trong full có thể dài hơn (phần sau dấu ")
-        if (
-          fullLines[i] === headingLine ||
-          fullLines[i].startsWith(headingLine)
-        ) {
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    // Phần header trước key đầu tiên
     const firstIdx = findLineIndex(topHeadings[0].line);
-    if (firstIdx > 0) {
-      const header = fullLines.slice(0, firstIdx).join("\n").trim();
-      if (header) result.push({ " ": header });
+    const header = fullLines.slice(0, firstIdx).join("\n").trim();
+
+    // ✅ Convert array → object
+    const levelArray = buildLevel(topHeadings, minDepth);
+    const tree = Object.assign({}, ...levelArray);
+
+    if (header) {
+      return { " ": header, ...tree };
     }
-
-    // Từng key → value
-    let searchFrom = 0;
-    for (let i = 0; i < topHeadings.length; i++) {
-      const current = topHeadings[i];
-      const next = topHeadings[i + 1];
-      const startIdx = findLineIndex(current.line, searchFrom);
-      if (startIdx === -1) continue;
-
-      const endIdx = next
-        ? findLineIndex(next.line, startIdx + 1)
-        : fullLines.length;
-
-      const valueLines = fullLines.slice(
-        startIdx + 1,
-        endIdx === -1 ? fullLines.length : endIdx,
-      );
-      const value = valueLines
-        .join("\n")
-        .replace(/^\n+/, "")
-        .replace(/\n+$/, "");
-
-      result.push({ [current.line]: value });
-      searchFrom = startIdx + 1;
-    }
-
-    return result;
+    return tree;
   }
 
-  // ─── Detect cấu trúc và parse ─────────────────────────────────────────────
-  let data = [];
+  // ─── parseByMinDepthHeadings giờ dùng buildTree ──────────────────────────
+  function parseByMinDepthHeadings(fullText, strippedText) {
+    const tree = buildTree(fullText, strippedText);
+    return Object.entries(tree).map(([key, value]) => ({ [key]: value }));
+  }
 
+  let data = [];
   const stripped = stripQuotedBlocks(i4);
 
-  // Kiểm tra xem có cấu trúc chương (I. II. III.) không
   if (i4.match(/(như sau|sau đây|lưu ý):\n(V|I|X)\./gm)) {
     console.log("nếu có chương ...");
-
     const chapterArray = i4.match(/^(V|I|X)+\..*/gm);
     if (!chapterArray) {
       data = parseByMinDepthHeadings(i4, stripped);
     } else {
-      // Tìm phần trước chương đầu tiên
       const firstChapterIdx = i4.indexOf(chapterArray[0]);
       const header = i4.slice(0, firstChapterIdx).trim();
       if (header) data.push({ " ": header });
-
       for (let a = 0; a < chapterArray.length; a++) {
         const chStart = i4.indexOf(chapterArray[a]);
         const chEnd =
@@ -1544,18 +1585,14 @@ export function convertContentOfficialDispatch(contentOutputText) {
         const chContent = i4
           .slice(chStart + chapterArray[a].length, chEnd)
           .trim();
-
-        // Parse nội dung trong chương theo min-depth headings
         const chStripped = stripQuotedBlocks(chContent);
-        const chData = parseByMinDepthHeadings(chContent, chStripped);
-        data.push({ [chapterArray[a]]: chData });
+        // ← Giờ trả về object lồng nhau thay vì array flat
+        const chTree = buildTree(chContent, chStripped);
+        data.push({ [chapterArray[a]]: chTree });
       }
     }
-
-    // Kiểm tra xem có cấu trúc phần (A. B. C.) không
   } else if (i4.match(/(như sau|sau đây|lưu ý):\n(A|B|C|D|E|F|G|H)\./gm)) {
     console.log("nếu có phần thứ ...");
-
     const sectionArray = i4.match(/^(A|B|C|D|E|F|G|H)\..*/gm);
     if (!sectionArray) {
       data = parseByMinDepthHeadings(i4, stripped);
@@ -1563,7 +1600,6 @@ export function convertContentOfficialDispatch(contentOutputText) {
       const firstSectionIdx = i4.indexOf(sectionArray[0]);
       const header = i4.slice(0, firstSectionIdx).trim();
       if (header) data.push({ " ": header });
-
       for (let a = 0; a < sectionArray.length; a++) {
         const secStart = i4.indexOf(sectionArray[a]);
         const secEnd =
@@ -1573,14 +1609,15 @@ export function convertContentOfficialDispatch(contentOutputText) {
         const secContent = i4
           .slice(secStart + sectionArray[a].length, secEnd)
           .trim();
-
         const secStripped = stripQuotedBlocks(secContent);
-        const secData = parseByMinDepthHeadings(secContent, secStripped);
-        data.push({ [sectionArray[a]]: secData });
+        const secTree = buildTree(secContent, secStripped); // object thuần
+        data.push({
+          [sectionArray[a]]: Object.entries(secTree).map(([k, v]) => ({
+            [k]: v,
+          })),
+        });
       }
     }
-
-    // Không có chương/phần → parse trực tiếp
   } else {
     console.log("parse trực tiếp theo heading số ...");
     data = parseByMinDepthHeadings(i4, stripped);
@@ -1589,8 +1626,6 @@ export function convertContentOfficialDispatch(contentOutputText) {
   console.table("data", data);
   return { data, fullText: i4 };
 }
-
-const CHECKPOINT_FILE = "app/asset/checkpoint.json";
 
 // ============================================================
 // lawProcessor.js  — server-only
@@ -1760,7 +1795,10 @@ export async function processAllLaws(law) {
 
       try {
         obj.embedding = await embedText(textToEmbed);
-        console.log(`${i+1}/${allChunks.length} chunk embedding:`, obj.embedding[1]);
+        console.log(
+          `${i + 1}/${allChunks.length} chunk embedding:`,
+          obj.embedding[1],
+        );
       } catch (err) {
         console.error(`❌ Embed lỗi `, err);
         continue;
@@ -1803,12 +1841,6 @@ export function addJSONFile(lawInfo) {
 
 export async function Push(textForMachine, lawInfoPush, fullText) {
   try {
-    // const yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
-    // let lawNumberForPush =
-    //   lawInfoPush["lawNumber"] +
-    //   (!lawInfoPush["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
-    //     ? "(" + yearSign + ")"
-    //     : "");
     const lawNumberForPush = createNameLawForPush(lawInfoPush);
 
     if (!textForMachine || !lawInfoPush || !lawNumberForPush || !fullText) {
@@ -1817,47 +1849,45 @@ export async function Push(textForMachine, lawInfoPush, fullText) {
       return false;
     }
 
-          const embed = await fetch("/api/embedlaw", {
-        method: "POST",
+    const embed = await fetch("/api/embedlaw", {
+      method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+      headers: {
+        "Content-Type": "application/json",
+      },
 
-        body: JSON.stringify({
-          law: { info: lawInfoPush, content: textForMachine },
-        }),
-      });
+      body: JSON.stringify({
+        law: { info: lawInfoPush, content: textForMachine },
+      }),
+    });
 
-      const data = await embed.json();
-      console.log("Server response:", data);
-
-
+    const data = await embed.json();
+    console.log("Server response:", data);
 
     // Kiểm tra nếu server trả lỗi (status >= 400)
     if (!(embed.ok && data.success)) {
-      console.log(`Fetch thất bại: ${embed.status} ${embed.statusText}\n${data}`);
+      console.log(
+        `Fetch thất bại: ${embed.status} ${embed.statusText}\n${data}`,
+      );
       return false;
     } else {
+      const res = await fetch("/api/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // dataEmbedding: lawEmbedding,
+          dataLaw: textForMachine,
+          lawInfo: lawInfoPush,
+          lawNumberForPush: lawNumberForPush,
+          contentText: fullText,
+          // dataEmbedding: data,
+        }),
+      });
+      // console.log('res',res);
 
-          const res = await fetch("/api/push", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        // dataEmbedding: lawEmbedding,
-        dataLaw: textForMachine,
-        lawInfo: lawInfoPush,
-        lawNumberForPush: lawNumberForPush,
-        contentText: fullText,
-        // dataEmbedding: data,
-      }),
-    });
-    // console.log('res',res);
+      const data = await res.json();
 
-    const data = await res.json();
-    
-        addJSONFile(lawInfoPush);
-
+      addJSONFile(lawInfoPush);
 
       alert("Successfully embedded law!");
 
@@ -1867,7 +1897,6 @@ export async function Push(textForMachine, lawInfoPush, fullText) {
         alert("Failed to embed law: " + errorText);
         return;
       } else {
-
       }
 
       // const data = await res.text();

@@ -60,20 +60,8 @@ export async function POST(req) {
     }
   }
 
-  // async function pushLawChunk(lawEmbedding) {
-  //   console.log("Pushing law chunks to MongoDB...", lawEmbedding);
-  //   try {
-  //     const database = client.db("LawMachine");
-  //     const LawContent = database.collection("LawChunks");
-  //     await LawContent.insertMany(lawEmbedding);
-  //     return true;
-  //   } catch (error) {
-  //     console.error("❌ Error in pushLawSearchDescription:", error);
-  //     return false;
-  //   }
-  // }
 
-  // // 🔹 Thực thi 4 thao tác
+  // // 🔹 Thực thi 3 thao tác
   const ok1 = await pushLawContent(body.lawInfo, body.dataLaw, body.lawNumberForPush);
   const ok2 = await pushLawSearch(
     body.lawInfo,

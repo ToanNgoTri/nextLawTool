@@ -72,12 +72,12 @@ function Page() {
 
     async function checkNghiQuyet() {
     setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=ngh%E1%BB%8B%20quy%E1%BA%BFt%20h%E1%BB%99i%20%C4%91%E1%BB%93ng%20th%E1%BA%A9m%20ph%C3%A1n&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=0&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2025&DateToString=&search=&DocTypeIds=13&search=h%E1%BB%99i+%C4%91%E1%BB%93ng+th%E1%BA%A9m+p&OrganIds=141&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
     );
     let a = await fetch(
       `/api/check?url=` +
         encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=ngh%E1%BB%8B%20quy%E1%BA%BFt%20h%E1%BB%99i%20%C4%91%E1%BB%93ng%20th%E1%BA%A9m%20ph%C3%A1n&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=0&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
+          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2025&DateToString=&search=&DocTypeIds=13&search=h%E1%BB%99i+%C4%91%E1%BB%93ng+th%E1%BA%A9m+p&OrganIds=141&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
         )
     )
       .then((res) => res.json())
@@ -103,6 +103,39 @@ function Page() {
         // console.log("res.data", res.content);
       });
   }
+
+      async function checkVKSNDTC_CV() {
+    setURL(
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2024&DateToString=&search=c%C3%B4ng&DocTypeIds=3&search=&OrganIds=225&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0"
+    );
+    let a = await fetch(
+      `/api/check?url=` +
+        encodeURIComponent(
+      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2024&DateToString=&search=c%C3%B4ng&DocTypeIds=3&search=&OrganIds=225&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0"
+        )
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.content);
+        // console.log("res.data", res.content);
+      });
+  }
+
+        async function checkTANDTC_CV() {
+    setURL(
+"https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=h%C6%B0%E1%BB%9Bng%20d%E1%BA%ABn&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=T%C3%92A%20%C3%81N%20NH%C3%82&search=&DocTypeIds=3&OrganIds=193&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PagSize=20&PageSize=20&PageIndex=1"    );
+    let a = await fetch(
+      `/api/check?url=` +
+        encodeURIComponent(
+"https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=h%C6%B0%E1%BB%9Bng%20d%E1%BA%ABn&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=T%C3%92A%20%C3%81N%20NH%C3%82&search=&DocTypeIds=3&OrganIds=193&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PagSize=20&PageSize=20&PageIndex=1"        )
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.content);
+        // console.log("res.data", res.content);
+      });
+  }
+
 
   return (
     <div id={styles.container}>
@@ -189,6 +222,28 @@ function Page() {
               onClick={() => checkLuat()}
             >
               Check Luật
+            </button>
+                        <button
+              style={{
+                width: "20%",
+                marginTop: 10,
+                marginRight: 20,
+                height: 30,
+              }}
+              onClick={() => checkVKSNDTC_CV()}
+            >
+              Check VKSND
+            </button>
+                        <button
+              style={{
+                width: "20%",
+                marginTop: 10,
+                marginRight: 20,
+                height: 30,
+              }}
+              onClick={() => checkTANDTC_CV()}
+            >
+              Check TANDTC
             </button>
           </div>
           <table style={{ paddingTop: 10 }}>
