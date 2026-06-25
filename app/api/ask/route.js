@@ -114,7 +114,6 @@ export async function POST(req) {
     // 1. Vector search
     const relevantDocs = await findRelevantDocs(embedding);
 
-      console.log(relevantDocs[0]);
       
     const context = relevantDocs
       .map(
