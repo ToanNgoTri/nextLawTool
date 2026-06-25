@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 export default function Home() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);   // đang embed hoặc chờ token đầu
+  const [loading, setLoading] = useState(false); // đang embed hoặc chờ token đầu
   const [streaming, setStreaming] = useState(false); // đang nhận tokens
   const bottomRef = useRef(null);
 
@@ -46,7 +46,20 @@ export default function Home() {
         }),
       });
 
-      if (!res.ok) throw new Error("Server error");
+      if (!res.ok) {
+        // Đọc lỗi từ server thay vì hardcode
+        const errData = await res.json().catch(() => ({}));
+        const errMsg =
+          res.status === 429
+            ? `Tất cả model đang bận. ${errData.detail || "Thử lại sau ít phút."}`
+            : errData.error || "Có lỗi xảy ra, thử lại nhé.";
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: errMsg },
+        ]);
+        setLoading(false);
+        return;
+      }
 
       setLoading(false);
       setStreaming(true);
@@ -91,7 +104,10 @@ export default function Home() {
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Có lỗi xảy ra, thử lại nhé." },
+        {
+          role: "assistant",
+          content: error.message || "Có lỗi xảy ra, thử lại nhé.",
+        },
       ]);
       console.error(error);
     } finally {
@@ -145,7 +161,13 @@ export default function Home() {
 
         {/* Loading bubble — hiện khi embed xong, chờ token đầu tiên */}
         {loading && (
-          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 16 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-start",
+              marginBottom: 16,
+            }}
+          >
             <div
               style={{
                 background: "#e5e7eb",

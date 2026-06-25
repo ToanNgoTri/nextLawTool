@@ -37,18 +37,21 @@ async function findRelevantDocs(queryEmbedding) {
       fullText: data.fullText,
       lawId: data.lawId,
       lawDescription: data.lawDescription,
+      lawDayActive:data.lawDayActive,
+      lawdateSign:data.lawdateSign
     };
   });
 }
 
-    const MODELS = [
-      'google/gemma-4-31b-it:free',
-      'google/gemma-4-26b-a4b-it:free',
-      'qwen/qwen3-next-80b-a3b-instruct:free',
-      'qwen/qwen3-coder:free',
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'meta-llama/llama-3.2-3b-instruct:free',
-    ];
+const MODELS = [
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "qwen/qwen3-coder:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "meta-llama/llama-3.2-3b-instruct:free",
+  // "qwen/qwen3-embedding-8b"
+];
 
 async function callLLMWithFallback(systemPrompt, messages) {
   for (const model of MODELS) {
@@ -57,7 +60,7 @@ async function callLLMWithFallback(systemPrompt, messages) {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY_SELF_USE}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -65,16 +68,16 @@ async function callLLMWithFallback(systemPrompt, messages) {
         stream: true,
         temperature: 0.2,
         max_tokens: 500,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
+        messages: [{ role: "system", content: systemPrompt }, ...messages],
       }),
     });
 
     if (res.status === 429) {
       const errText = await res.text().catch(() => "");
-      console.warn(`Model ${model} bị rate limit (429), thử model tiếp theo...`, errText);
+      console.warn(
+        `Model ${model} bị rate limit (429), thử model tiếp theo...`,
+        errText,
+      );
       continue;
     }
 
@@ -111,21 +114,39 @@ export async function POST(req) {
     // 1. Vector search
     const relevantDocs = await findRelevantDocs(embedding);
 
+      console.log(relevantDocs[0]);
+      
     const context = relevantDocs
       .map(
         (d, i) =>
-          `[Đoạn ${i + 1} — ${d.lawDescription || d.lawId || ""} — ${d.article || ""}]\n${d.fullText}`,
+          `[${d.fullText}\nVăn bản ký ngày ${new Date(d.lawdateSign).toLocaleDateString("vi-VN")} có hiệu lực ngày ${new Date(d.lawDayActive).toLocaleDateString("vi-VN")}]`,
       )
       .join("\n\n");
+
+    // console.log("context", context);
 
     // 2. Tạo system prompt
     const systemPrompt = `Bạn là AI tư vấn pháp luật Việt Nam.
 Nhiệm vụ:
 - Chỉ dùng thông tin trong CONTEXT bên dưới.
 - Trả lời NGẮN GỌN, dễ hiểu.
-- KHÔNG copy nguyên văn dữ liệu.
 - Hãy diễn giải lại bằng ngôn ngữ tự nhiên.
-- Nếu không đủ thông tin thì nói: "Không tìm thấy thông tin phù hợp."
+
+Khi câu trả lời có căn cứ pháp luật:
+1. Luôn nêu căn cứ trước.
+2. Ghi theo mẫu:
+   "Căn cứ [Tên văn bản] số [Số văn bản] ngày ...., có hiệu lực từ ngày ... .
+   Điều [1/2/3]. [ghi rõ nội dung trích yếu]:
+   [[1|2|3]. nội dung cụ thể ]... (nếu 1 không liên quan thì bỏ luôn bắt đầu từ [2|3] )
+2. Sau đó mới giải thích nội dung bằng lời văn tự nhiên.
+4. Không được bịa số điều, khoản hoặc tên văn bản. Chỉ sử dụng thông tin có trong CONTEXT.
+
+Định dạng đầu ra:
+- Chỉ được xuất plain text.
+- Cấm sử dụng các ký tự Markdown như *, **, #, -, _, >, 
+
+Nếu không đủ thông tin thì trả lời:
+"Không tìm thấy thông tin phù hợp."
 
 CONTEXT:
 ${context}`;
@@ -141,6 +162,8 @@ ${context}`;
         Connection: "keep-alive",
       },
     });
+
+    return "abc";
   } catch (error) {
     console.error("Lỗi /api/ask:", error);
 
@@ -148,9 +171,9 @@ ${context}`;
     return new Response(
       JSON.stringify({
         error: error.message || "Server error",
-        detail: error.detail,
+        detail: error.detail || "",  // "Vui lòng thử lại sau ít phút."
       }),
-      { status },
+      { status, headers: { "Content-Type": "application/json" } },
     );
   }
 }
