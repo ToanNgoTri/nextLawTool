@@ -27,8 +27,18 @@ export async function POST(req) {
   let result = await processAllLaws(law);
   // console.log(`🎉 Hoàn tất `, result);
 
+  // const result = await processAllLaws(law);
+
+  // Không có gì để lưu, hoặc lưu ít hơn số lượng lẽ ra phải có → coi là lỗi
+  if (!result || result.length === 0) {
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
+
   async function pushLawChunk(lawEmbedding) {
-    // console.log("Pushing law chunks to Firestore...", lawEmbedding);
+    if (!lawEmbedding || lawEmbedding.length === 0) {
+      console.warn("⚠️ Không có chunk nào để push vào Firestore");
+      return false;
+    }
     try {
       const colRef = db.collection("chunks");
 
@@ -39,9 +49,7 @@ export async function POST(req) {
         const chunk = lawEmbedding.slice(i, i + chunkSize);
 
         chunk.forEach((item) => {
-          const docRef = item._id
-            ? colRef.doc(String(item._id))
-            : colRef.doc();
+          const docRef = item._id ? colRef.doc(String(item._id)) : colRef.doc();
 
           const { embedding, ...rest } = item;
 
