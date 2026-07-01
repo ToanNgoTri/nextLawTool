@@ -809,21 +809,8 @@ export async function convertBareTextInfo(
     );
   }
 
-  lawDaySign = addDaysToDate(lawDaySign, 0);
+  lawDaySign = lawDaySign.includes('/')?addDaysToDate(lawDaySign, 0):new Date(lawDaySign);
 
-  // console.log('a',convertPartTwo(partOne, nameSignArrayDemo)
-  //   .descriptionText);
-
-  // lawDescription = convertPartTwo(partOne, nameSignArrayDemo)
-  //   .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
-  //   .replace(/\.$/gim, "")
-  //   .trim();
-
-  //   lawDescription = !lawKind.match(/Luật/gim)
-  // ? lawNameDisplay + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "")
-  // : lawDescription + " số " + lawNumber + " " + lawDescription.replace(new RegExp(`^${lawKind} `), "");
-
-  // console.log('lawDaySign', typeof lawDaySign);
 
   lawDescription = lawKind.match(/Luật/gim)
     ? lawDescription + " số " + lawNumber
@@ -899,7 +886,7 @@ export async function getNormalTextInfo(
     lawNumber,
   );
 
-  lawDaySign = addDaysToDate(lawDaySign, 0);
+  lawDaySign = lawDaySign.includes('/')?addDaysToDate(lawDaySign, 0):new Date(lawDaySign);
 
   // console.log("lawDescription", lawDescription);
 
@@ -1753,24 +1740,24 @@ export function extractChunksFromLaw(law) {
 
 // ─── Embed ────────────────────────────────────────────────────────────────────
 async function embedText(text) {
-  // const res = await fetch("http://localhost:11434/api/embeddings", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ model: "bge-m3", prompt: text }),
-  // });
-
-  const res = await fetch("https://ollama.pixelplaces.net/api/embed", {
+  const res = await fetch("http://localhost:11434/api/embeddings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "bge-m3", input: text }),
+    body: JSON.stringify({ model: "bge-m3", prompt: text }),
   });
+
+  // const res = await fetch("https://ollama.pixelplaces.net/api/embed", {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify({ model: "bge-m3", input: text }),
+  // });
 
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
   // console.log("Embedding result:", data);
 
-  // return data.embedding;
-  return data.embeddings[0];
+  return data.embedding;
+  // return data.embeddings[0];
 }
 
 // ─── processAllLaws — trả về mảng chunks đã embed, không ghi DB ───────────────
