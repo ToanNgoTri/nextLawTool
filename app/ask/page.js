@@ -15,13 +15,22 @@ export default function Home() {
   }, [messages]);
 
   async function embed(text) {
-    const res = await fetch("https://ollama.pixelplaces.net/api/embed", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "bge-m3", input: text }),
-    });
-    const data = await res.json();
-    return data.embeddings[0];
+    // const res = await fetch("https://ollama.pixelplaces.net/api/embed", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ model: "bge-m3", input: text }),
+    // });
+    // const data = await res.json();
+    // return data.embeddings[0];
+
+
+      const res = await fetch("http://localhost:11434/api/embeddings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "bge-m3", prompt: text }),
+  });
+  const data = await res.json();
+  return data.embedding;
   }
 
   async function askAI() {

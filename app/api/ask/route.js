@@ -43,55 +43,135 @@ async function findRelevantDocs(queryEmbedding) {
   });
 }
 
+// const MODELS = [
+//   "google/gemma-4-31b-it:free",
+//   "google/gemma-4-26b-a4b-it:free",
+//   "qwen/qwen3-next-80b-a3b-instruct:free",
+//   "qwen/qwen3-coder:free",
+//   "meta-llama/llama-3.3-70b-instruct:free",
+//   "meta-llama/llama-3.2-3b-instruct:free",
+//   // "qwen/qwen3-embedding-8b"
+// ];
+
+
+// async function callLLMWithFallback(systemPrompt, messages) {
+//   for (const model of MODELS) {
+//     console.log(`Thử model: ${model}`);
+
+//     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY_SELF_USE}`,
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         model,
+//         stream: true,
+//         temperature: 0.2,
+//         max_tokens: 500,
+//         messages: [{ role: "system", content: systemPrompt }, ...messages],
+//       }),
+//     });
+
+//     if (res.status === 429) {
+//       const errText = await res.text().catch(() => "");
+//       console.warn(
+//         `Model ${model} bị rate limit (429), thử model tiếp theo...`,
+//         errText,
+//       );
+//       continue;
+//     }
+
+//     if (!res.ok || !res.body) {
+//       const errText = await res.text().catch(() => "(không đọc được body)");
+//       console.error(`Model ${model} lỗi - status: ${res.status}`, errText);
+//       // Lỗi khác 429 thì throw luôn, không fallback
+//       throw Object.assign(new Error("Lỗi gọi LLM"), {
+//         status: res.status,
+//         detail: errText,
+//       });
+//     }
+
+//     console.log(`Dùng model: ${model}`);
+//     return res;
+//   }
+
+//   throw Object.assign(new Error("Tất cả model đều bị rate limit"), {
+//     status: 429,
+//     detail: "Vui lòng thử lại sau ít phút.",
+//   });
+// }
+
+
+const PROVIDERS = {
+  openrouter: {
+    url: "https://openrouter.ai/api/v1/chat/completions",
+    headers: () => ({
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY_SELF_USE}`,
+      "Content-Type": "application/json",
+    }),
+  },
+  nvidia: {
+    url: "https://integrate.api.nvidia.com/v1/chat/completions",
+    headers: () => ({
+      Authorization: `Bearer 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`,
+      "Content-Type": "application/json",
+    }),
+  },
+};
+
 const MODELS = [
-  "google/gemma-4-31b-it:free",
-  "google/gemma-4-26b-a4b-it:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "qwen/qwen3-coder:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
-  // "qwen/qwen3-embedding-8b"
+  { provider: "openrouter", model: "google/gemma-4-31b-it:free" },
+  { provider: "openrouter", model: "google/gemma-4-26b-a4b-it:free" },
+  { provider: "openrouter", model: "qwen/qwen3-next-80b-a3b-instruct:free" },
+  { provider: "openrouter", model: "qwen/qwen3-coder:free" },
+  { provider: "openrouter", model: "meta-llama/llama-3.3-70b-instruct:free" },
+  { provider: "openrouter", model: "meta-llama/llama-3.2-3b-instruct:free" },
+  { provider: "nvidia", model: "qwen/qwen3.5-122b-a10b" },
 ];
 
 async function callLLMWithFallback(systemPrompt, messages) {
-  for (const model of MODELS) {
-    console.log(`Thử model: ${model}`);
+  for (const { provider, model } of MODELS) {
+    const cfg = PROVIDERS[provider];
+    console.log(`Thử model: ${provider}/${model}`);
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY_SELF_USE}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        stream: true,
-        temperature: 0.2,
-        max_tokens: 500,
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
-      }),
-    });
+    let res;
+    try {
+      res = await fetch(cfg.url, {
+        method: "POST",
+        headers: { ...cfg.headers(), Accept: "text/event-stream" },
+        body: JSON.stringify({
+          model,
+          stream: true,
+          temperature: 0.2,
+          max_tokens: 500,
+          messages: [{ role: "system", content: systemPrompt }, ...messages],
+        }),
+      });
+    } catch (networkErr) {
+      console.error(`Model ${provider}/${model} lỗi network:`, networkErr.message);
+      continue;
+    }
+
+    // Chốt chặn: nếu vì lý do gì đó res vẫn undefined/null thì coi như lỗi, không crash
+    if (!res) {
+      console.error(`Model ${provider}/${model}: fetch trả về res rỗng, bỏ qua`);
+      continue;
+    }
 
     if (res.status === 429) {
       const errText = await res.text().catch(() => "");
-      console.warn(
-        `Model ${model} bị rate limit (429), thử model tiếp theo...`,
-        errText,
-      );
+      console.warn(`Model ${provider}/${model} bị rate limit (429), thử model tiếp theo...`, errText);
       continue;
     }
 
     if (!res.ok || !res.body) {
       const errText = await res.text().catch(() => "(không đọc được body)");
-      console.error(`Model ${model} lỗi - status: ${res.status}`, errText);
-      // Lỗi khác 429 thì throw luôn, không fallback
-      throw Object.assign(new Error("Lỗi gọi LLM"), {
-        status: res.status,
-        detail: errText,
-      });
+      console.error(`Model ${provider}/${model} lỗi - status: ${res.status}`, errText);
+      throw Object.assign(new Error("Lỗi gọi LLM"), { status: res.status, detail: errText });
     }
 
-    console.log(`Dùng model: ${model}`);
+    console.log(`Dùng model: ${provider}/${model}`);
     return res;
   }
 
@@ -134,15 +214,17 @@ Nhiệm vụ:
 Khi câu trả lời có căn cứ pháp luật:
 1. Luôn nêu căn cứ trước.
 2. Ghi theo mẫu:
-   "Căn cứ [Tên văn bản] số [Số văn bản] ngày ...., có hiệu lực từ ngày ... .
+   "Căn cứ [Tên văn bản NGUYÊN VĂN] số [Số văn bản] ngày ...., có hiệu lực từ ngày ... .
    Điều [1/2/3]. [ghi rõ nội dung trích yếu]:
    [[1|2|3]. nội dung cụ thể ]... (nếu 1 không liên quan thì bỏ luôn bắt đầu từ [2|3] )
-2. Sau đó mới giải thích nội dung bằng lời văn tự nhiên.
+2. Sau đó mới giải thích nội dung bằng lời văn tự nhiên, bằng mở đầu: tóm lại, nói chung, theo đó, do đó, vì vậy, kết luận là, ... (tùy ngữ cảnh).
+3. Nếu câu hỏi không liên quan đến pháp luật Việt Nam thì trả lời: "Không tìm thấy thông tin phù hợp."
 4. Không được bịa số điều, khoản hoặc tên văn bản. Chỉ sử dụng thông tin có trong CONTEXT.
+5. không để nội dung văn bản trong dấu [] .
 
 Định dạng đầu ra:
 - Chỉ được xuất plain text.
-- Cấm sử dụng các ký tự Markdown như *, **, #, -, _, >, 
+- Cấm sử dụng các ký tự Markdown như *, **, #, -, _, >.
 
 Nếu không đủ thông tin thì trả lời:
 "Không tìm thấy thông tin phù hợp."
