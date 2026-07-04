@@ -2,344 +2,200 @@
 import { useState } from "react";
 import styles from "../page.module.css";
 
+const CHECK_BUTTONS = [
+  { label: "Check", key: "manual" }, // nút check URL nhập tay
+  { label: "Nghị Định", key: "nghidinh" },
+  { label: "Thông Tư", key: "thongtu" },
+  { label: "Văn bản hợp nhất", key: "vanbanhopnhat" },
+  { label: "Nghị quyết", key: "nghiquyet" },
+  { label: "Luật", key: "luat" },
+  { label: "VKSND", key: "vksnd" },
+  { label: "TANDTC", key: "tandtc" },
+  // thêm nút mới ở đây, tối đa tới 11 hoặc hơn vẫn tự co giãn
+];
+
+const URL_MAP = {
+  nghidinh:
+    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1",
+  thongtu:
+    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1",
+  vanbanhopnhat:
+    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1",
+  nghiquyet:
+    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2025&DateToString=&search=&DocTypeIds=13&search=h%E1%BB%99i+%C4%91%E1%BB%93ng+th%E1%BA%A9m+p&OrganIds=141&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1",
+  luat:
+    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=lu%E1%BA%ADt&search=&search=&DocTypeIds=58&DocTypeIds=10&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1",
+  vksnd:
+    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2024&DateToString=&search=c%C3%B4ng&DocTypeIds=3&search=&OrganIds=225&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0",
+  tandtc:
+    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=h%C6%B0%E1%BB%9Bng%20d%E1%BA%ABn&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=T%C3%92A%20%C3%81N%20NH%C3%82&search=&DocTypeIds=3&OrganIds=193&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PagSize=20&PageSize=20&PageIndex=1",
+};
+
+const btnStyle = {
+  padding: "8px 10px",
+  borderRadius: 8,
+  border: "1px solid #555",
+  background: "#2a2a2a",
+  color: "#eee",
+  fontSize: 13,
+  cursor: "pointer",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const thStyle = {
+  border: "1px solid #444",
+  padding: "8px 10px",
+  background: "#2a2a2a",
+  textAlign: "left",
+};
+
+const tdStyle = {
+  border: "1px solid #333",
+  padding: "8px 10px",
+};
+
 function Page() {
   const [URL, setURL] = useState("");
   const [data, setData] = useState({});
-  // console.log("data", data);
+  const [loading, setLoading] = useState(false);
 
-  async function check() {
-    console.log(URL);
-
-    let a = await fetch(`/api/check?url=` + encodeURIComponent(URL))
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
+  async function runCheck(targetUrl) {
+    setURL(targetUrl);
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/check?url=` + encodeURIComponent(targetUrl)
+      ).then((r) => r.json());
+      setData(res.content || {});
+    } finally {
+      setLoading(false);
+    }
   }
 
-  async function checkNghiDinh() {
-    
-    setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-    );
-    let a = await fetch(
-      `/api/check?url=` +
-        encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-        )
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
-  }
-
-  async function checkThongTu() {
-    setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-    );
-    let a = await fetch(
-      `/api/check?url=` +
-        encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-        )
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
-  }
-
-  async function checkVanBanHopNhat() {
-    setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-    );
-    let a = await fetch(
-      `/api/check?url=` +
-        encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-        )
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
-  }
-
-    async function checkNghiQuyet() {
-    setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2025&DateToString=&search=&DocTypeIds=13&search=h%E1%BB%99i+%C4%91%E1%BB%93ng+th%E1%BA%A9m+p&OrganIds=141&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-    );
-    let a = await fetch(
-      `/api/check?url=` +
-        encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2025&DateToString=&search=&DocTypeIds=13&search=h%E1%BB%99i+%C4%91%E1%BB%93ng+th%E1%BA%A9m+p&OrganIds=141&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-        )
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
-  }
-
-    async function checkLuat() {
-    setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=lu%E1%BA%ADt&search=&search=&DocTypeIds=58&DocTypeIds=10&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-    );
-    let a = await fetch(
-      `/api/check?url=` +
-        encodeURIComponent(
-          "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=lu%E1%BA%ADt&search=&search=&DocTypeIds=58&DocTypeIds=10&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=1000&PageIndex=1"
-        )
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
-  }
-
-      async function checkVKSNDTC_CV() {
-    setURL(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2024&DateToString=&search=c%C3%B4ng&DocTypeIds=3&search=&OrganIds=225&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0"
-    );
-    let a = await fetch(
-      `/api/check?url=` +
-        encodeURIComponent(
-      "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2024&DateToString=&search=c%C3%B4ng&DocTypeIds=3&search=&OrganIds=225&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0"
-        )
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
-  }
-
-        async function checkTANDTC_CV() {
-    setURL(
-"https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=h%C6%B0%E1%BB%9Bng%20d%E1%BA%ABn&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=T%C3%92A%20%C3%81N%20NH%C3%82&search=&DocTypeIds=3&OrganIds=193&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PagSize=20&PageSize=20&PageIndex=1"    );
-    let a = await fetch(
-      `/api/check?url=` +
-        encodeURIComponent(
-"https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=h%C6%B0%E1%BB%9Bng%20d%E1%BA%ABn&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=T%C3%92A%20%C3%81N%20NH%C3%82&search=&DocTypeIds=3&OrganIds=193&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PagSize=20&PageSize=20&PageIndex=1"        )
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res.content);
-        // console.log("res.data", res.content);
-      });
-  }
-
+  // Số cột = số nút / 2, làm tròn lên => luôn đúng 2 hàng, không scroll
+  const columns = Math.ceil(CHECK_BUTTONS.length / 2);
 
   return (
     <div id={styles.container}>
       <div id={styles.inner_container}>
-        <div id={styles.input_container}>
+        <div
+          id={styles.input_container}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            maxWidth: 1000,
+            margin: "0 auto",
+            padding: "24px 16px",
+          }}
+        >
           <textarea
             className={styles.input_area}
             id={styles.content_input}
             value={URL}
             onChange={(e) => setURL(e.target.value)}
-            style={{ width: 500 ,marginTop:20}}
-            cols={100}
+            placeholder="Dán URL cần kiểm tra..."
+            rows={3}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              borderRadius: 8,
+              border: "1px solid #444",
+              background: "#1e1e1e",
+              color: "#eee",
+              padding: 10,
+              fontSize: 14,
+              resize: "vertical",
+            }}
             onKeyDown={(e) => {
-              
               if (e.key === "Enter" && !e.shiftKey) {
-                 e.preventDefault(); 
-                check();
+                e.preventDefault();
+                runCheck(URL);
               }
             }}
-          ></textarea>
-          <div>
-            <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => check()}
-            >
-              Check
-            </button>
-            <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => checkNghiDinh()}
-            >
-              Check Nghị Định
-            </button>
-            <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => checkThongTu()}
-            >
-              Check Thông Tư
-            </button>
-            <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => checkVanBanHopNhat()}
-            >
-              Check Văn bản hợp nhất
-            </button>
-            <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => checkNghiQuyet()}
-            >
-              Check Nghị quyết
-            </button>
-            <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => checkLuat()}
-            >
-              Check Luật
-            </button>
-                        <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => checkVKSNDTC_CV()}
-            >
-              Check VKSND
-            </button>
-                        <button
-              style={{
-                width: "20%",
-                marginTop: 10,
-                marginRight: 20,
-                height: 30,
-              }}
-              onClick={() => checkTANDTC_CV()}
-            >
-              Check TANDTC
-            </button>
-          </div>
-          <table style={{ paddingTop: 10 }}>
-            <tbody>
-              <tr>
-                <td
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "white",
-                    borderStyle: "solid",
-                    padding: 5,
-                  }}
-                >
-                  STT
-                </td>
-                <td
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "white",
-                    borderStyle: "solid",
-                  }}
-                >
-                  Tên
-                </td>
-                <td
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "white",
-                    borderStyle: "solid",
-                  }}
-                >
-                  URL
-                </td>
-                <td
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "white",
-                    borderStyle: "solid",
-                  }}
-                >
-                  Chuyển
-                </td>
-              </tr>
+          />
 
+          {/* Grid tự co: luôn 2 hàng, số cột = số nút/2, không scroll */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${columns}, 1fr)`,
+              gridTemplateRows: "repeat(2, auto)",
+              gridAutoFlow: "row",
+              gap: 8,
+              width: "100%",
+            }}
+          >
+            {CHECK_BUTTONS.map((b) => (
+              <button
+                key={b.key}
+                style={btnStyle}
+                title={b.label}
+                onClick={() =>
+                  runCheck(b.key === "manual" ? URL : URL_MAP[b.key])
+                }
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+
+          {loading && (
+            <div style={{ color: "#aaa", fontSize: 13 }}>Đang kiểm tra...</div>
+          )}
+
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginTop: 8,
+              fontSize: 14,
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={thStyle}>STT</th>
+                <th style={thStyle}>Tên</th>
+                <th style={thStyle}>URL</th>
+                <th style={thStyle}>Chuyển</th>
+              </tr>
+            </thead>
+            <tbody>
               {data &&
-                Object.keys(data).map((key, i) => {
-                  return (
-                    <tr key={i}>
-                      <td
+                Object.keys(data).map((key, i) => (
+                  <tr
+                    key={i}
+                    style={{ background: i % 2 === 0 ? "#1a1a1a" : "#141414" }}
+                  >
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      {i + 1}
+                    </td>
+                    <td style={tdStyle}>{key}</td>
+                    <td style={{ ...tdStyle, wordBreak: "break-all" }}>
+                      {data[key]}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      <a
+                        href={`/once?URL=${data[key]}`}
+                        target="_blank"
+                        rel="noreferrer"
                         style={{
-                          borderWidth: 1,
-                          borderColor: "white",
-                          borderStyle: "solid",
-                          textAlign: "center",
+                          display: "inline-block",
+                          padding: "4px 12px",
+                          borderRadius: 6,
+                          background: "#4CAF50",
+                          color: "#fff",
+                          textDecoration: "none",
+                          fontSize: 13,
                         }}
                       >
-                        {i + 1}
-                      </td>
-                      <td
-                        style={{
-                          borderWidth: 1,
-                          borderColor: "white",
-                          borderStyle: "solid",
-                          padding: 10,
-                        }}
-                      >
-                        {key}
-                      </td>
-                      <td
-                        style={{
-                          borderWidth: 1,
-                          borderColor: "white",
-                          borderStyle: "solid",
-                        }}
-                      >
-                        {data[key]}
-                      </td>
-                      <td
-                        style={{
-                          borderWidth: 1,
-                          borderColor: "white",
-                          borderStyle: "solid",
-                          backgroundColor: "#4CAF50",
-                        }}
-                      >
-                        <a
-                          href={`/once?URL=${data[key]}`}
-                          target="_blank"
-                          style={{ justifyContent: "center", display: "flex" }}
-                        >
-                          Redirect
-                        </a>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        Redirect
+                      </a>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
