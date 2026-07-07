@@ -361,7 +361,7 @@ export default function Page() {
           onChange={(e) => setURL(e.target.value)}
         ></textarea>
       </div>
-      <div id={styles.inner_container}>
+      <div id={styles.inner_container} style={{ display: "flex", flexDirection: "row" ,width:'77%'}}>
         <div id={styles.input_container}>
           <p>lawNumber</p>
           <textarea
