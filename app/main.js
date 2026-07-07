@@ -1740,24 +1740,27 @@ export function extractChunksFromLaw(law) {
 
 // ─── Embed ────────────────────────────────────────────────────────────────────
 async function embedText(text) {
-  const res = await fetch("http://localhost:11434/api/embeddings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "bge-m3", prompt: text }),
-  });
-
-  // const res = await fetch("https://ollama.pixelplaces.net/api/embed", {
+  // const res = await fetch("http://localhost:11434/api/embeddings", {
   //   method: "POST",
   //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ model: "bge-m3", input: text }),
+  //   body: JSON.stringify({ model: "bge-m3", prompt: text }),
   // });
+  //   if (!res.ok) throw new Error(await res.text());
+  // const data = await res.json();
 
+  // return data.embedding;
+
+  const res = await fetch("https://ollama.pixelplaces.net/api/embed", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "bge-m3", input: text }),
+  });
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
+  return data.embeddings[0];
+
   // console.log("Embedding result:", data);
 
-  return data.embedding;
-  // return data.embeddings[0];
 }
 
 // ─── processAllLaws — trả về mảng chunks đã embed, không ghi DB ───────────────
@@ -1814,27 +1817,6 @@ export async function processAllLaws(law) {
 // createChunkEmbedding — giữ lại nếu cần dùng đơn lẻ
 // =========================
 
-export function addJSONFile(lawInfo) {
-  let yearSign = parseInt(lawInfo["lawDaySign"].getYear()) + 1900;
-  let lawNumberForPush =
-    lawInfo["lawNumber"] +
-    (!lawInfo["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
-      ? "(" + yearSign + ")"
-      : "");
-
-  fetch("/api/changejsonfile", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      lawInfo: lawInfo,
-      lawNumber: lawNumberForPush,
-    }),
-  }).then((res) => {
-    res.text();
-    console.log("✅ Changejsonfile success!");
-  });
-}
-
 export async function Push(textForMachine, lawInfoPush, fullText) {
   try {
     const lawNumberForPush = createNameLawForPush(lawInfoPush);
@@ -1882,8 +1864,6 @@ export async function Push(textForMachine, lawInfoPush, fullText) {
       // console.log('res',res);
 
       const data = await res.json();
-
-      addJSONFile(lawInfoPush);
 
       alert("Successfully embedded law!");
 

@@ -1,6 +1,8 @@
 const puppeteer = require("puppeteer");
 import { NextResponse, Request } from "next/server";
-var fs = require("fs");
+import { MongoClient } from "mongodb";
+
+const client = new MongoClient(process.env.MONGODB_URI);
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -78,14 +80,20 @@ export async function GET(request) {
 
   let content = {};
 
-  let lawPairObject = await JSON.parse(
-    fs.readFileSync("app/asset/ObjectLawPair.json", "utf8"),
-  );
+  const lawKeys = Object.keys(ObjectLaw["content"]);
 
-  for (let a = 0; a < Object.keys(ObjectLaw["content"]).length; a++) {
-    if (!lawPairObject[Object.keys(ObjectLaw["content"])[a]]) {
-      content[Object.keys(ObjectLaw["content"])[a]] =
-        ObjectLaw["content"][Object.keys(ObjectLaw["content"])[a]];
+  // Đối chiếu trực tiếp với MongoDB: lấy các _id đã tồn tại trong đám luật vừa cào
+  const database = client.db("LawMachine");
+  const collection = database.collection("LawSearchDescription");
+  const existingDocs = await collection
+    .find({ _id: { $in: lawKeys } }, { projection: { _id: 1 } })
+    .toArray();
+  const existingIds = new Set(existingDocs.map((d) => d._id));
+
+  // Chỉ giữ lại những luật CHƯA có trong DB
+  for (const key of lawKeys) {
+    if (!existingIds.has(key)) {
+      content[key] = ObjectLaw["content"][key];
     }
   }
 

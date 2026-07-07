@@ -19,7 +19,6 @@ import {
   getNormalTextInfo,
   convertContent,
   convertContentOfficialDispatch,
-  addJSONFile,
   beep,
   Push,
 } from "../main";
@@ -64,7 +63,7 @@ export default function Page() {
   const [ObjectLawPair, setObjectLawPair] = useState({});
 
   useEffect(() => {
-    fetch("/api/getlawjson")
+    fetch("/api/getlawjson", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setObjectLawPair(data))
       .catch((err) => console.error("Fetch JSON error:", err));
@@ -183,11 +182,7 @@ export default function Page() {
           ? "(" + yearSign + ")"
           : "");
 
-      if (
-        ObjectLawPair[
-          lawNumberForPush.toLowerCase().replace(/( và| của|,|&)/gim, "")
-        ]
-      ) {
+      if (lawNumberForPush in ObjectLawPair) {
         NaviNext();
       }
       console.log("lawDescription", result.lawInfo["lawDescription"]);
