@@ -37,7 +37,14 @@ async function eachRun(url) {
     let roleSign = "";
 
     if (Object.keys(elementContent).length == 0) {
-      elementContent = document.querySelectorAll(".noidungtracuu");
+      // Văn bản hợp nhất (và một số trang không có .noidungtracuu/.docitem-*):
+      // nội dung nằm trong .the-document-body[data-role="content-body"]
+      elementContent = document.querySelectorAll(
+        '.the-document-body[data-role="content-body"]',
+      );
+      if (Object.keys(elementContent).length == 0) {
+        elementContent = document.querySelectorAll(".noidungtracuu");
+      }
       lawRelated = "";
       roleSign = "";
     } else {

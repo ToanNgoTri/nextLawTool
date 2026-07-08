@@ -38,7 +38,14 @@ export async function GET(request) {
           let roleSign = "";
       
           if (Object.keys(elementContent).length == 0) {
-            elementContent = document.querySelectorAll(".noidungtracuu");
+            // Văn bản hợp nhất (và một số trang không có .noidungtracuu/.docitem-*):
+            // nội dung nằm trong .the-document-body[data-role="content-body"]
+            elementContent = document.querySelectorAll(
+              '.the-document-body[data-role="content-body"]',
+            );
+            if (Object.keys(elementContent).length == 0) {
+              elementContent = document.querySelectorAll(".noidungtracuu");
+            }
             lawRelated = "";
             roleSign = "";
           } else {
@@ -53,7 +60,7 @@ export async function GET(request) {
                 : "");
             lawRelated = lawRelated.replace(/\_*/g, "");
             lawRelated = lawRelated.replace(/\n+/g, "\n");
-      
+
             roleSign = document.querySelector(".the-document-body >.docitem-9")
               ? document.querySelector(".the-document-body >.docitem-9").innerText
               : "";
