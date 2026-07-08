@@ -132,20 +132,38 @@ export default function Page() {
   let lawNameDisplay;
 
   function getValueinArea() {
-    unitPublish = unitPublishText.split(/[;]/).map((item) => item.trim());
+    lawKind = lawKindText.replace(/(^\s*|\s*$)/gim, "");
+
+    // Thông tư liên tịch: các cơ quan/Bộ và tên được phân chia bằng dấu ","
+    // thay vì dấu ";" như xưa. Ngoại trừ "Bộ Văn hóa, Thể thao và Du lịch"
+    // vốn có sẵn dấu phẩy trong tên nên không được tách.
+    const splitUnitOrName = (text) => {
+      if (lawKind.match(/liên tịch/i)) {
+        const PLACEHOLDER = "__VHTTDL__";
+        return text
+          .replace(/Bộ Văn hóa, Thể thao và Du lịch/gi, (m) =>
+            m.replace(/,/g, PLACEHOLDER),
+          )
+          .split(/[,]/)
+          .map((item) => item.replace(new RegExp(PLACEHOLDER, "g"), ",").trim())
+          .filter(Boolean);
+      }
+      return text
+        .split(/[;]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    };
+
+    unitPublish = splitUnitOrName(unitPublishText);
     lawDaySign = lawDaySignText.replace(/\s/gim, "");
 
-    // nameSign = nameSignText.split(";");
-
-    nameSign = nameSignText.split(/[;]/).map((item) => item.trim());
+    nameSign = splitUnitOrName(nameSignText);
 
     lawDescription = lawDescriptionText;
 
     lawNumber = lawNumberText.replace(/\s/gim, "");
 
     lawRelated = [];
-
-    lawKind = lawKindText.replace(/(^\s*|\s*$)/gim, "");
 
     // console.log('lawDescription',lawDescription);
     lawNameDisplay = lawDescription;
