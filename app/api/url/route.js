@@ -29,7 +29,11 @@ export async function GET(request) {
           }
       
           let elementContent = document.querySelectorAll(
-            ".noidungtracuu >.docitem-1:not(.docitem-9 ~ div), .docitem-2:not(.docitem-9 ~ div), .docitem-5:not(.docitem-9 ~ div), .docitem-11:not(.docitem-9 ~ div), .docitem-12:not(.docitem-9 ~ div)"
+            // docitem-22/24/25: khối nội dung được TRÍCH DẪN/SỬA ĐỔI trong các
+            // nghị định/thông tư sửa đổi-bổ sung (vd "Điều 3a..." được bổ sung).
+            // Thiếu các class này thì chỉ lấy được dòng tiêu đề "Điều 1. Bổ sung..."
+            // mà mất toàn bộ phần nội dung sửa đổi bên dưới.
+            ".noidungtracuu >.docitem-1:not(.docitem-9 ~ div), .docitem-2:not(.docitem-9 ~ div), .docitem-5:not(.docitem-9 ~ div), .docitem-11:not(.docitem-9 ~ div), .docitem-12:not(.docitem-9 ~ div), .docitem-22:not(.docitem-9 ~ div), .docitem-24:not(.docitem-9 ~ div), .docitem-25:not(.docitem-9 ~ div)"
             // ".noidungtracuu .docitem-5"
           );
           console.log("elementContent", elementContent);

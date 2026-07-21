@@ -4,7 +4,7 @@ const pages = [
   { href: "/once",          label: "Once",           desc: "Xử lý văn bản đơn lẻ" },
   { href: "/check",         label: "Check",          desc: "Kiểm tra & đối chiếu" },
   { href: "/ask",           label: "Ask",            desc: "Tra cứu AI pháp luật" },
-  { href: "/findfirestore", label: "Find Firestore", desc: "Tìm kiếm dữ liệu chunks" },
+  { href: "/findfirestore", label: "Find Chunks", desc: "Tìm kiếm dữ liệu chunks (MongoDB)" },
 ];
 
 export default function Home() {

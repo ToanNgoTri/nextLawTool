@@ -1,0 +1,82 @@
+✅ Đã có 334422 ids trong firestore-ids.json (bỏ qua fetch).
+📖 Stream file local, ghi record có id ∈ Firestore -> firestore-chunks.jsonl ...
+  đọc 50000 record local, đã ghi 50000...
+  đọc 100000 record local, đã ghi 100000...
+  đọc 150000 record local, đã ghi 149993...
+  đọc 200000 record local, đã ghi 199984...
+  đọc 250000 record local, đã ghi 249966...
+  đọc 300000 record local, đã ghi 299958...
+✅ Local xong: đọc 320629, ghi 320584 (bỏ 45 id đã xoá khỏi Firestore). Còn 13838 id Firestore cần tải riêng.
+⬇️  Tải 13838 doc còn thiếu từ Firestore (đã có 0)...
+  ⬇️  200/13838 doc thiếu đã tải
+  ⬇️  400/13838 doc thiếu đã tải
+  ⬇️  600/13838 doc thiếu đã tải
+  ⬇️  800/13838 doc thiếu đã tải
+  ⬇️  1000/13838 doc thiếu đã tải
+  ⬇️  1200/13838 doc thiếu đã tải
+  ⬇️  1400/13838 doc thiếu đã tải
+  ⬇️  1600/13838 doc thiếu đã tải
+  ⬇️  1800/13838 doc thiếu đã tải
+  ⬇️  2000/13838 doc thiếu đã tải
+  ⬇️  2200/13838 doc thiếu đã tải
+  ⬇️  2400/13838 doc thiếu đã tải
+  ⬇️  2600/13838 doc thiếu đã tải
+  ⬇️  2800/13838 doc thiếu đã tải
+  ⬇️  3000/13838 doc thiếu đã tải
+  ⬇️  3200/13838 doc thiếu đã tải
+  ⬇️  3400/13838 doc thiếu đã tải
+  ⬇️  3600/13838 doc thiếu đã tải
+  ⬇️  3800/13838 doc thiếu đã tải
+  ⬇️  4000/13838 doc thiếu đã tải
+  ⬇️  4200/13838 doc thiếu đã tải
+  ⬇️  4400/13838 doc thiếu đã tải
+  ⬇️  4600/13838 doc thiếu đã tải
+  ⬇️  4800/13838 doc thiếu đã tải
+  ⬇️  5000/13838 doc thiếu đã tải
+  ⬇️  5200/13838 doc thiếu đã tải
+  ⬇️  5400/13838 doc thiếu đã tải
+  ⬇️  5600/13838 doc thiếu đã tải
+  ⬇️  5800/13838 doc thiếu đã tải
+  ⬇️  6000/13838 doc thiếu đã tải
+  ⬇️  6200/13838 doc thiếu đã tải
+  ⬇️  6400/13838 doc thiếu đã tải
+  ⬇️  6600/13838 doc thiếu đã tải
+  ⬇️  6800/13838 doc thiếu đã tải
+  ⬇️  7000/13838 doc thiếu đã tải
+  ⬇️  7200/13838 doc thiếu đã tải
+  ⬇️  7400/13838 doc thiếu đã tải
+  ⬇️  7600/13838 doc thiếu đã tải
+  ⬇️  7800/13838 doc thiếu đã tải
+  ⬇️  8000/13838 doc thiếu đã tải
+  ⬇️  8200/13838 doc thiếu đã tải
+  ⬇️  8400/13838 doc thiếu đã tải
+  ⬇️  8600/13838 doc thiếu đã tải
+  ⬇️  8800/13838 doc thiếu đã tải
+  ⬇️  9000/13838 doc thiếu đã tải
+  ⬇️  9200/13838 doc thiếu đã tải
+  ⬇️  9400/13838 doc thiếu đã tải
+  ⬇️  9600/13838 doc thiếu đã tải
+  ⬇️  9800/13838 doc thiếu đã tải
+  ⬇️  10000/13838 doc thiếu đã tải
+  ⬇️  10200/13838 doc thiếu đã tải
+  ⬇️  10400/13838 doc thiếu đã tải
+  ⬇️  10600/13838 doc thiếu đã tải
+  ⬇️  10800/13838 doc thiếu đã tải
+  ⬇️  11000/13838 doc thiếu đã tải
+  ⬇️  11200/13838 doc thiếu đã tải
+  ⬇️  11400/13838 doc thiếu đã tải
+  ⬇️  11600/13838 doc thiếu đã tải
+  ⬇️  11800/13838 doc thiếu đã tải
+  ⬇️  12000/13838 doc thiếu đã tải
+  ⬇️  12200/13838 doc thiếu đã tải
+  ⬇️  12400/13838 doc thiếu đã tải
+  ⬇️  12600/13838 doc thiếu đã tải
+  ⬇️  12800/13838 doc thiếu đã tải
+  ⬇️  13000/13838 doc thiếu đã tải
+  ⬇️  13200/13838 doc thiếu đã tải
+  ⬇️  13400/13838 doc thiếu đã tải
+  ⬇️  13600/13838 doc thiếu đã tải
+  ⬇️  13800/13838 doc thiếu đã tải
+  ⬇️  13838/13838 doc thiếu đã tải
+🏁 Build xong -> firestore-chunks.jsonl
+✅ HOÀN TẤT.

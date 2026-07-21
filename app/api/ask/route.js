@@ -1,46 +1,49 @@
 // app/api/ask/route.js
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getChunksCollection, VECTOR_INDEX, VECTOR_FIELD } from "../../lib/mongoRag";
 
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-const db = getFirestore();
-
-const COLLECTION_NAME = "chunks";
-const VECTOR_FIELD = "embedding";
 const TOP_K = 5;
 
 async function findRelevantDocs(queryEmbedding) {
-  const collectionRef = db.collection(COLLECTION_NAME);
+  const collection = await getChunksCollection();
 
-  const vectorQuery = collectionRef.findNearest({
-    vectorField: VECTOR_FIELD,
-    queryVector: queryEmbedding,
-    limit: TOP_K,
-    distanceMeasure: "COSINE",
-  });
+  // Vector search bằng Atlas/Mongo $vectorSearch (cosine, index sẵn có).
+  // numCandidates nên lớn hơn limit nhiều lần để tăng độ chính xác (recall).
+  const docs = await collection
+    .aggregate([
+      {
+        $vectorSearch: {
+          index: VECTOR_INDEX,
+          path: VECTOR_FIELD,
+          queryVector: queryEmbedding,
+          numCandidates: Math.max(TOP_K * 30, 100),
+          limit: TOP_K,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          article: 1,
+          fullText: 1,
+          lawId: 1,
+          lawDescription: 1,
+          lawDayActive: 1,
+          lawdateSign: 1,
+          score: { $meta: "vectorSearchScore" },
+        },
+      },
+    ])
+    .toArray();
 
-  const snapshot = await vectorQuery.get();
-
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      article: data.article,
-      fullText: data.fullText,
-      lawId: data.lawId,
-      lawDescription: data.lawDescription,
-      lawDayActive:data.lawDayActive,
-      lawdateSign:data.lawdateSign
-    };
-  });
+  return docs.map((d) => ({
+    id: d._id,
+    article: d.article,
+    fullText: d.fullText,
+    lawId: d.lawId,
+    lawDescription: d.lawDescription,
+    lawDayActive: d.lawDayActive,
+    lawdateSign: d.lawdateSign,
+    score: d.score,
+  }));
 }
 
 // const MODELS = [

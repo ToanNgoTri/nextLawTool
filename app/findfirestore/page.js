@@ -141,8 +141,8 @@ async function handleDelete() {
     <div style={styles.container}>
       <div style={styles.headerRow}>
         <div>
-          <h1 style={styles.title}>🔍 Firestore Chunks Viewer</h1>
-          <p style={styles.subtitle}>Collection: <code style={styles.code}>chunks</code></p>
+          <h1 style={styles.title}>🔍 MongoDB Chunks Viewer</h1>
+          <p style={styles.subtitle}>Collection: <code style={styles.code}>ragdb.chunks</code></p>
         </div>
         <div style={styles.statBox}>
           <div style={styles.statLabel}>Tổng documents</div>
@@ -347,7 +347,6 @@ async function handleDelete() {
                 {isExpanded && (
                   <div style={styles.docBody}>
                     <Field label="_id" value={item._id} mono />
-                    <Field label="Firestore docId" value={item.docId} mono />
                     <Field label="lawId" value={item.lawId} />
                     <Field label="article" value={item.article} />
                     <Field label="lawDescription" value={item.lawDescription} />

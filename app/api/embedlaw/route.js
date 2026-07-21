@@ -1,23 +1,6 @@
 import { processAllLaws } from "../../main";
 import { NextResponse } from "next/server";
-import { initializeApp, cert, getApps } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
-
-// ✅ Khởi tạo Firebase Admin chỉ 1 lần
-if (!getApps().length) {
-  const serviceAccount = {
-    project_id: process.env.FIREBASE_PROJECT_ID,
-    client_email: process.env.FIREBASE_CLIENT_EMAIL,
-    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-  };
-
-  initializeApp({
-    credential: cert(serviceAccount),
-    databaseURL: "https://project2-197c0-default-rtdb.firebaseio.com",
-  });
-}
-
-const db = getFirestore();
+import { getChunksCollection } from "../../lib/mongoRag";
 
 // ✅ Chỉ chạy khi bấm gọi API
 export async function POST(req) {
@@ -36,31 +19,28 @@ export async function POST(req) {
 
   async function pushLawChunk(lawEmbedding) {
     if (!lawEmbedding || lawEmbedding.length === 0) {
-      console.warn("⚠️ Không có chunk nào để push vào Firestore");
+      console.warn("⚠️ Không có chunk nào để push vào MongoDB");
       return false;
     }
     try {
-      const colRef = db.collection("chunks");
+      const col = await getChunksCollection();
 
-      // Firestore batch giới hạn 500 thao tác/lần -> chia nhỏ
+      // Upsert theo _id (idempotent). Embedding lưu dạng array để index
+      // vector_index (cosine, 1024 chiều) nhận diện được.
       const chunkSize = 500;
       for (let i = 0; i < lawEmbedding.length; i += chunkSize) {
-        const batch = db.batch();
-        const chunk = lawEmbedding.slice(i, i + chunkSize);
-
-        chunk.forEach((item) => {
-          const docRef = item._id ? colRef.doc(String(item._id)) : colRef.doc();
-
-          const { embedding, ...rest } = item;
-
-          batch.set(docRef, {
+        const slice = lawEmbedding.slice(i, i + chunkSize);
+        const ops = slice.map((item) => {
+          const _id = item._id ? String(item._id) : crypto.randomUUID();
+          const { embedding, _id: _ignore, ...rest } = item;
+          const doc = {
+            _id,
             ...rest,
-            // Nếu có field embedding (vector), dùng FieldValue.vector
-            ...(embedding ? { embedding: FieldValue.vector(embedding) } : {}),
-          });
+            ...(Array.isArray(embedding) && embedding.length ? { embedding } : {}),
+          };
+          return { replaceOne: { filter: { _id }, replacement: doc, upsert: true } };
         });
-
-        await batch.commit();
+        await col.bulkWrite(ops, { ordered: false });
       }
 
       return true;

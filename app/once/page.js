@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 // import {getValueinArea} from '../../public/asset/'
 import styles from "../page.module.css";
-// import ObjectLawPair from "../asset/ObjectLawPair";
 import { useSearchParams } from "next/navigation";
 import {
   addDaysToDate,

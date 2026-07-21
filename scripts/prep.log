@@ -1,0 +1,9 @@
+🛠️  Tạo file import-ready (thêm field 'text') -> firestore-chunks.import.jsonl ...
+  ...50000 docs
+  ...100000 docs
+  ...150000 docs
+  ...200000 docs
+  ...250000 docs
+  ...300000 docs
+🏁 Xong: 334422 docs -> D:\Code\nextLawTool\app\asset\firestore-chunks.import.jsonl
+✅ HOÀN TẤT.

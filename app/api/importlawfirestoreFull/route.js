@@ -1,5 +1,3 @@
-import { initializeApp, cert, getApps } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { createReadStream } from "fs";
 import fs from "fs/promises";
 import path from "path";
@@ -7,25 +5,11 @@ import { chain } from "stream-chain";
 import { parser } from "stream-json";
 import { streamArray } from "stream-json/streamers/stream-array.js";
 import { NextResponse } from "next/server";
+import { getChunksCollection } from "../../lib/mongoRag";
 
-if (!getApps().length) {
-  const serviceAccount = {
-    project_id: process.env.FIREBASE_PROJECT_ID,
-    client_email: process.env.FIREBASE_CLIENT_EMAIL,
-    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-  };
-
-  initializeApp({
-    credential: cert(serviceAccount),
-    databaseURL: "https://project2-197c0-default-rtdb.firebaseio.com",
-  });
-}
-
-const db = getFirestore();
-
-// Giảm batch size để tránh vượt giới hạn 10MB/request của Firestore.
-// Vector embedding khá nặng nên 100 docs/batch là quá nhiều.
-const BATCH_SIZE = 20;
+// Import file JSON lớn (app/asset/LawMachine.LawChunks.json) vào MongoDB
+// (ragdb.chunks). Trước đây đích là Firestore; nay đã đổi sang MongoDB.
+const BATCH_SIZE = 500;
 const CHECKPOINT_DIR = path.join(process.cwd(), "app/asset");
 const CHECKPOINT_PATH = path.join(CHECKPOINT_DIR, ".import-checkpoint.json");
 
@@ -126,6 +110,7 @@ function isValidDoc(doc) {
 
 function buildDocData(doc) {
   return {
+    _id: doc._id,
     lawId: doc.lawId ?? null,
     lawdateSign: doc.lawdateSign ?? null,
     lawDayActive: doc.lawDayActive ?? null,
@@ -133,24 +118,24 @@ function buildDocData(doc) {
     article: doc.article ?? null,
     fullText: doc.fullText ?? null,
     textChunk: doc.textChunk ?? null,
-    embedding: FieldValue.vector(doc.embedding),
+    embedding: doc.embedding, // Mongo lưu vector dạng array
   };
 }
 
-// Commit một mảng docs. Nếu gặp lỗi (vượt size, dữ liệu không hợp lệ...),
+// Commit một mảng docs bằng bulkWrite (upsert theo _id). Nếu gặp lỗi,
 // tự động chia đôi để cô lập đúng document gây lỗi rồi bỏ qua riêng nó,
 // thay vì để cả batch (hoặc cả pipeline) bị sập.
 async function commitChunk(docs) {
   if (docs.length === 0) return 0;
 
-  const batch = db.batch();
-  for (const doc of docs) {
-    const ref = db.collection("chunks").doc(doc._id);
-    batch.set(ref, buildDocData(doc));
-  }
+  const col = await getChunksCollection();
+  const ops = docs.map((doc) => {
+    const data = buildDocData(doc);
+    return { replaceOne: { filter: { _id: data._id }, replacement: data, upsert: true } };
+  });
 
   try {
-    await batch.commit();
+    await col.bulkWrite(ops, { ordered: false });
     return docs.length;
   } catch (err) {
     // Còn nhiều hơn 1 doc -> chia đôi để tìm ra (các) doc gây lỗi
