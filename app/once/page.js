@@ -133,23 +133,19 @@ export default function Page() {
   function getValueinArea() {
     lawKind = lawKindText.replace(/(^\s*|\s*$)/gim, "");
 
-    // Thông tư liên tịch: các cơ quan/Bộ và tên được phân chia bằng dấu ","
-    // thay vì dấu ";" như xưa. Ngoại trừ "Bộ Văn hóa, Thể thao và Du lịch"
-    // vốn có sẵn dấu phẩy trong tên nên không được tách.
+    // Cơ quan/Bộ và người ký được phân tách bằng dấu "," (một số VB cũ dùng ";").
+    // Ngoại trừ tên Bộ có sẵn dấu phẩy bên trong (vd "Bộ Văn hóa, Thể thao và
+    // Du lịch") — bảo vệ để không bị cắt nhầm giữa tên. Thêm Bộ khác vào PROTECTED.
     const splitUnitOrName = (text) => {
-      if (lawKind.match(/liên tịch/i)) {
-        const PLACEHOLDER = "__VHTTDL__";
-        return text
-          .replace(/Bộ Văn hóa, Thể thao và Du lịch/gi, (m) =>
-            m.replace(/,/g, PLACEHOLDER),
-          )
-          .split(/[,]/)
-          .map((item) => item.replace(new RegExp(PLACEHOLDER, "g"), ",").trim())
-          .filter(Boolean);
-      }
-      return text
-        .split(/[;]/)
-        .map((item) => item.trim())
+      const PROTECTED = [/Bộ Văn hóa, Thể thao và Du lịch/gi];
+      const PLACEHOLDER = "__COMMA__";
+      let t = text;
+      PROTECTED.forEach((re) => {
+        t = t.replace(re, (m) => m.replace(/,/g, PLACEHOLDER));
+      });
+      return t
+        .split(/[,;]/)
+        .map((item) => item.replace(new RegExp(PLACEHOLDER, "g"), ",").trim())
         .filter(Boolean);
     };
 

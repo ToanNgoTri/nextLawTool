@@ -48,6 +48,9 @@ export default function Page() {
   const inputArea = useRef(null);
   const outputArea = useRef(null);
   const lawRelatedRef = useRef(null);
+  // Đánh dấu "vừa Receive xong" để getInfo chỉ tự chạy 1 lần sau khi cào,
+  // KHÔNG chạy lại mỗi lần gõ/sửa tay trong ô Content.
+  const receivedRef = useRef(false);
 
   const searchParams = useSearchParams();
   const url = searchParams.get("URL");
@@ -90,23 +93,19 @@ export default function Page() {
   function getValueinArea() {
     lawKind = lawKindText.replace(/(^\s*|\s*$)/gim, "");
 
-    // Thông tư liên tịch: các cơ quan/Bộ và tên được phân chia bằng dấu ","
-    // thay vì dấu ";" như xưa. Ngoại trừ "Bộ Văn hóa, Thể thao và Du lịch"
-    // vốn có sẵn dấu phẩy trong tên nên không được tách.
+    // Cơ quan/Bộ và người ký được phân tách bằng dấu "," (một số VB cũ dùng ";").
+    // Ngoại trừ tên Bộ có sẵn dấu phẩy bên trong (vd "Bộ Văn hóa, Thể thao và
+    // Du lịch") — bảo vệ để không bị cắt nhầm giữa tên. Thêm Bộ khác vào PROTECTED.
     const splitUnitOrName = (text) => {
-      if (lawKind.match(/liên tịch/i)) {
-        const PLACEHOLDER = "__VHTTDL__";
-        return text
-          .replace(/Bộ Văn hóa, Thể thao và Du lịch/gi, (m) =>
-            m.replace(/,/g, PLACEHOLDER),
-          )
-          .split(/[,]/)
-          .map((item) => item.replace(new RegExp(PLACEHOLDER, "g"), ",").trim())
-          .filter(Boolean);
-      }
-      return text
-        .split(/[;]/)
-        .map((item) => item.trim())
+      const PROTECTED = [/Bộ Văn hóa, Thể thao và Du lịch/gi];
+      const PLACEHOLDER = "__COMMA__";
+      let t = text;
+      PROTECTED.forEach((re) => {
+        t = t.replace(re, (m) => m.replace(/,/g, PLACEHOLDER));
+      });
+      return t
+        .split(/[,;]/)
+        .map((item) => item.replace(new RegExp(PLACEHOLDER, "g"), ",").trim())
         .filter(Boolean);
     };
 
@@ -146,7 +145,7 @@ export default function Page() {
     contentText = contentText.replace(/(^\s*|\s*$)/gim, ""); // bỏ các khoảng trắng đầu và cuối nếu có
   }
 
-  async function getInfo() {
+  async function getInfo(isManual = false) {
     try {
       getValueinArea();
       let result;
@@ -189,10 +188,14 @@ export default function Page() {
           ? "(" + yearSign + ")"
           : "");
 
-      // Đã có trong DB => bỏ qua, KHÔNG push (không tự nhảy tiếp)
+      // Luồng TỰ ĐỘNG: đã có trong DB thì bỏ qua. Bấm tay "Get Infomation"
+      // (isManual) thì VẪN xử lý để test/push lại dù đã có trong DB.
       if (lawNumberForPush in ObjectLawPair) {
-        console.log("Luật đã có trong DB => bỏ qua:", lawNumberForPush);
-        return;
+        if (!isManual) {
+          console.log("Luật đã có trong DB => bỏ qua:", lawNumberForPush);
+          return;
+        }
+        console.log("Luật đã có trong DB (vẫn xử lý vì bấm tay):", lawNumberForPush);
       }
 
       // Chưa có trong DB => tiến hành đẩy dữ liệu
@@ -229,7 +232,10 @@ export default function Page() {
     }
   }
   useEffect(() => {
-    if (contentInputText) {
+    // Chỉ tự xử lý sau khi bấm "Receive" (cào xong). Gõ/sửa tay ô Content
+    // KHÔNG kích hoạt — muốn xử lý lại thì bấm "Get Infomation".
+    if (contentInputText && receivedRef.current) {
+      receivedRef.current = false;
       getInfo();
     }
   }, [contentInputText, lawKindText]);
@@ -264,6 +270,10 @@ export default function Page() {
 
   async function clickToConvertContent(contentOutputText) {
     try {
+      if (!lawInfoPush || !lawInfoPush["lawNumber"]) {
+        console.log("Chưa có lawInfoPush — bấm 'Get Infomation' trước.");
+        return;
+      }
       let result;
       lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/gim)
         ? (result = convertContentOfficialDispatch(contentOutputText))
@@ -290,6 +300,7 @@ export default function Page() {
         setLawDescription(res.data.lawDescription);
         setLawRelated(res.data.lawRelated);
         setRoleSign(res.data.roleSign);
+        receivedRef.current = true; // cho phép getInfo tự chạy 1 lần
         setContentInput(res.data.content);
       }),
     );
@@ -546,7 +557,7 @@ export default function Page() {
             type="button"
             className={styles.btb}
             style={{ color: "black" }}
-            onClick={() => getInfo()}
+            onClick={() => getInfo(true)}
           >
             Get Infomation
           </button>
