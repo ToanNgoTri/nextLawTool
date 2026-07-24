@@ -11,6 +11,8 @@ const CHECK_BUTTONS = [
   { label: "Luật", key: "luat" },
   { label: "VKSND", key: "vksnd" },
   { label: "TANDTC", key: "tandtc" },
+  { label: "Pháp lệnh", key: "phaplenh" },
+  { label: "BCA", key: "bca" },
   // thêm nút mới ở đây, tối đa tới 11 hoặc hơn vẫn tự co giãn
 ];
 
@@ -29,6 +31,10 @@ const URL_MAP = {
     "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2024&DateToString=&search=c%C3%B4ng&DocTypeIds=3&search=&OrganIds=225&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
   tandtc:
     "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=h%C6%B0%E1%BB%9Bng%20d%E1%BA%ABn&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=T%C3%92A%20%C3%81N%20NH%C3%82&search=&DocTypeIds=3&OrganIds=193&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
+  phaplenh:
+    "https://luatvietnam.vn/van-ban/tim-kiem.html?SearchKeyword=&SearchOptions=1&SearchByDate=issue&DateFromString=&DateToString=&search=&search=&search=&DocTypeIds=14&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=100&PageSize=100&PageIndex=1",
+  bca:
+    "https://luatvietnam.vn/van-ban/tim-kiem.html?SearchKeyword=&SearchOptions=1&SearchByDate=issue&DateFromString=&DateToString=&search=&search=&search=&DocTypeIds=17&DocTypeIds=4&DocTypeIds=3&DocTypeIds=20&DocTypeIds=16&DocTypeIds=5&DocTypeIds=1&DocTypeIds=28&DocTypeIds=34&DocTypeIds=35&DocTypeIds=52&DocTypeIds=92&OrganIds=41&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=100&PageSize=100&PageIndex=1",
 };
 
 const btnStyle = {
@@ -65,9 +71,17 @@ function Page() {
     setURL(targetUrl);
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/check?url=` + encodeURIComponent(targetUrl)
-      ).then((r) => r.json());
+      const r = await fetch(`/api/check?url=` + encodeURIComponent(targetUrl));
+      const text = await r.text();
+      let res = {};
+      try {
+        res = text ? JSON.parse(text) : {};
+      } catch {
+        res = { error: `Phản hồi không hợp lệ (HTTP ${r.status})` };
+      }
+      if (res.error) {
+        alert("Lỗi khi kiểm tra: " + res.error);
+      }
       setData(res.content || {});
     } finally {
       setLoading(false);

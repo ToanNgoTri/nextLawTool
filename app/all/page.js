@@ -39,6 +39,8 @@ export default function Page() {
   const [contentInputText, setContentInput] = useState("");
   const [contentOutputText, setContentOutput] = useState("");
   const [lawInfoPush, setLawInfoPush] = useState({});
+  const [lawNameDisplayText, setLawNameDisplayText] = useState("");
+  const [lawDayActiveText, setLawDayActive] = useState("");
 
   const [fullText, setFullText] = useState("");
   const [textForMachine, setTextForMachine] = useState({});
@@ -47,17 +49,9 @@ export default function Page() {
   const outputArea = useRef(null);
   const lawRelatedRef = useRef(null);
 
-  // const params = useParams(); // { id: "123" }
-  // console.log('params',params);
-
-  // const id = params['id'];
-
   const searchParams = useSearchParams();
   const url = searchParams.get("URL");
   const id = searchParams.get("id");
-  // const RowAmount = searchParams.get("RowAmount");
-  // const PageIndex = searchParams.get("PageIndex");
-  // console.log('searchParams',searchParams);
 
   const [ObjectLawPair, setObjectLawPair] = useState({});
 
@@ -110,14 +104,16 @@ export default function Page() {
           .map((item) => item.replace(new RegExp(PLACEHOLDER, "g"), ",").trim())
           .filter(Boolean);
       }
-      return text.split("; ").map((item) => item.trim());
+      return text
+        .split(/[;]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
     };
 
     unitPublish = splitUnitOrName(unitPublishText);
     lawDaySign = lawDaySignText.replace(/\s/gim, "");
 
     nameSign = splitUnitOrName(nameSignText);
-    // nameSign = [];
 
     lawDescription = lawDescriptionText;
 
@@ -128,10 +124,9 @@ export default function Page() {
     lawNameDisplay = lawDescription;
     if (lawKind.match(/^(luật|bộ luật)/i)) {
       lawNameDisplay = lawDescription.replace(/,* của Quốc hội.*số.*/i, "");
-      // lawNameDisplay = lawNameDisplay.replace(/,* số \d.*của Quốc hội.*/i, "");
       lawNameDisplay = lawNameDisplay.replace(
         /,* số \d.*(của Quốc hội)*.*/i,
-        ""
+        "",
       );
 
       lawNameDisplay = lawNameDisplay + " năm " + lawDaySign.match(/\d+$/i)[0];
@@ -155,9 +150,7 @@ export default function Page() {
     try {
       getValueinArea();
       let result;
-      // let dataLaw
 
-      // console.log('nameSign',nameSign);
       if (roleSignText && lawRelatedText) {
         result = await getNormalTextInfo(
           contentText,
@@ -170,7 +163,7 @@ export default function Page() {
           lawNameDisplay,
           lawDescription,
           lawKind,
-          unitPublish
+          unitPublish,
         );
         setContentOutput(result.partTwo);
       } else {
@@ -184,9 +177,8 @@ export default function Page() {
           ObjectLawPair,
           lawDaySign,
           lawNameDisplay,
-          lawDescription
+          lawDescription,
         );
-        // console.log('infoLaw',result);
         setContentOutput(result.partTwo);
       }
       setLawInfoPush(result.lawInfo);
@@ -198,9 +190,26 @@ export default function Page() {
           ? "(" + yearSign + ")"
           : "");
 
+      // Tự điền các ô hiển thị như /once
+      setLawDescription(result.lawInfo["lawDescription"]);
+      setLawNameDisplayText(
+        result.lawInfo["lawKind"].match(/luật/gim)
+          ? lawNameDisplay
+          : result.lawInfo["lawNameDisplay"],
+      );
+
+      const dayActive = result.lawInfo["lawDayActive"];
+      setLawDayActive(
+        dayActive instanceof Date && !isNaN(dayActive)
+          ? dayActive.toISOString()
+          : (dayActive ?? ""),
+      );
+
+      // Đã có trong DB => bỏ qua, nhảy tiếp
       if (lawNumberForPush in ObjectLawPair) {
         NaviNext();
       }
+
       console.log("lawDescription", result.lawInfo["lawDescription"]);
       console.log("lawNumber", result.lawInfo["lawNumber"]);
       console.log("lawKind", result.lawInfo["lawKind"]);
@@ -211,12 +220,10 @@ export default function Page() {
       console.log("unitPublish", result.lawInfo["unitPublish"]);
       console.log("nameSign", result.lawInfo["nameSign"]);
       console.log("roleSign", result.lawInfo["roleSign"]);
-
-      // goToEndOutput()
-      // return infoLaw;
     } catch (e) {
       beep();
-      console.log(e);
+      console.log("Lỗi getInfo => bỏ qua, nhảy tiếp:", e);
+      NaviNext();
     }
   }
   useEffect(() => {
@@ -227,49 +234,51 @@ export default function Page() {
 
   useEffect(() => {
     if (Object.keys(lawInfoPush).length) {
-      // console.log("lawInfoPush", lawInfoPush);
-
       clickToConvertContent(contentOutputText);
     }
   }, [lawInfoPush]);
 
   useEffect(() => {
     if (Object.keys(textForMachine).length) {
-      // console.log("textForMachine", textForMachine);
-
       setTimeout(() => {
-        Push(textForMachine, lawInfoPush, fullText).then((res) => {
-          console.log(res);
-          
-          if (res) {
+        Push(textForMachine, lawInfoPush, fullText)
+          .then((res) => {
+            console.log(res);
+
+            // Push xong (thành công hay thất bại) đều nhảy tiếp
             setTimeout(() => {
-              NaviNext()
+              NaviNext();
             }, 3000);
-          }
-        });
+          })
+          .catch((e) => {
+            console.log("Lỗi Push => bỏ qua, nhảy tiếp:", e);
+            NaviNext();
+          });
       }, 1000);
     }
   }, [textForMachine]);
 
   async function clickToConvertContent(contentOutputText) {
-    // console.log(lawInfoPush);
-    let result;
-    lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/gim)
-      ? (result = convertContentOfficialDispatch(contentOutputText))
-      : (result = convertContent(contentOutputText));
+    try {
+      let result;
+      lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/gim)
+        ? (result = convertContentOfficialDispatch(contentOutputText))
+        : (result = convertContent(contentOutputText));
 
-    setFullText(result.fullText);
-    setTextForMachine(result.data);
-    // console.log(result.data);
+      setFullText(result.fullText);
+      setTextForMachine(result.data);
+    } catch (e) {
+      beep();
+      console.log("Lỗi convert content => bỏ qua, nhảy tiếp:", e);
+      NaviNext();
+    }
   }
 
   function getAllURL() {
     console.log(url);
 
-    fetch(`/api/allurl?id=${id}&URL=` + encodeURIComponent(url)).then((res) =>
+    fetch(`/api/AllURL?id=${id}&URL=` + encodeURIComponent(url)).then((res) =>
       res.json().then((res) => {
-        // console.log(res.data)
-
         setLawNumber(res.data.lawNumber);
         setUnitPublish(res.data.unitPublish);
         setLawKind(res.data.lawKind);
@@ -279,52 +288,9 @@ export default function Page() {
         setLawRelated(res.data.lawRelated);
         setRoleSign(res.data.roleSign);
         setContentInput(res.data.content);
-      })
+      }),
     );
   }
-  // useEffect(() => {
-  //   if (contentInputText) {
-  //     getInfo();
-  //   }
-  // }, [contentInputText]);
-
-  // async function Push() {
-  //   try {
-  //     const yearSign = parseInt(lawInfoPush["lawDaySign"].getYear()) + 1900;
-  //     const lawNumberForPush =
-  //       lawInfoPush["lawNumber"] +
-  //       (!lawInfoPush["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
-  //         ? "(" + yearSign + ")"
-  //         : "");
-
-  //     const res = await fetch("/api/push", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         dataLaw: textForMachine,
-  //         lawInfo: lawInfoPush,
-  //         lawNumber: lawNumberForPush,
-  //         contentText: fullText,
-  //       }),
-  //     });
-
-  //     // Kiểm tra nếu server trả lỗi (status >= 400)
-  //     if (!res.ok) {
-  //       const text = await res.text();
-  //       throw new Error(
-  //         `Fetch thất bại: ${res.status} ${res.statusText}\n${text}`
-  //       );
-  //       return;
-  //     }
-
-  //     addJSONFile(lawInfoPush);
-  //     // const data = await res.text();
-  //     console.log("✅ Push thành công:");
-  //   } catch (error) {
-  //     console.error("❌ Lỗi khi push:", error);
-  //     alert("Gửi dữ liệu thất bại. Vui lòng thử lại!");
-  //   }
-  // }
 
   function goToStartInput() {
     window.scrollTo({
@@ -345,7 +311,7 @@ export default function Page() {
   }
 
   function goToEndOutput() {
-    window.scrollTo({ top: outputArea.current.scrollHeight - 100 });
+    window.scrollTo({ top: outputArea.current.scrollHeight - 300 });
   }
 
   async function copyContent() {
@@ -364,42 +330,32 @@ export default function Page() {
     setURL(clipText);
   }
 
-  // const pathname = usePathname();
   function NaviNext() {
     console.log("url", url);
 
     let URI = url;
-    // URI = encodeURIComponent(URI)
     console.log("URI", URI);
 
     if (!URI.match(/PageIndex=/)) {
       console.log("có");
 
       URI = `/all?id=${id}&URL=${encodeURIComponent(
-        url + "&RowAmount=100&PageIndex=1"
+        url + "&RowAmount=100&PageIndex=1",
       )}`;
     } else {
       URI = `/all?id=${id}&URL=${encodeURIComponent(url)}`;
     }
-    // URI = encodeURIComponent(URI)
-    // console.log('URI',URI);
 
-    // if (URI.match(/(?<=AllURL\/).*(?=\?URL)/g)) {
     let currentIndex = id;
     let nextURI;
 
     console.log("URI", URI);
 
     if (currentIndex > 0) {
-      // console.log(URI);
-
       nextURI = URI.replace(
         new RegExp(`all\\?id=${id}`, "g"),
-        `all?id=${Number(id) + -1}`
+        `all?id=${Number(id) + -1}`,
       );
-      // console.log(nextURI);
-
-      // nextURI = URI.replace(/(?<=AllURL\/).*(?=\?URL)/g, `${currentIndex + 1}`);
     } else if (
       currentIndex == 0 &&
       parseInt(URI.match(/(?<=\%26PageIndex\%3D).*/gim)[0] == 1)
@@ -413,16 +369,10 @@ export default function Page() {
 
       nextURI = URI.replace(/(?<=\%26PageIndex\%3D).*/gim, nextPage);
       nextURI = nextURI.replace(new RegExp(`all\\?id=0`, "g"), `all?id=99`);
-
-      // nextURI = nextURI.replace(/(?<=AllURL\/).*(?=\?URL)/g, 0);
     }
 
     console.log("nextURI", nextURI);
     window.location.href = nextURI;
-
-    // } else {
-    //   console.log('none URI "AllURL"');
-    // }
   }
 
   return (
@@ -457,12 +407,11 @@ export default function Page() {
         >
           Redirect
         </a>
-
-        {/* <button style={{ width: "5%" }} onClick={() => getAllURL()}>
-          Get All
-        </button> */}
       </div>
-      <div id={styles.inner_container}>
+      <div
+        id={styles.inner_container}
+        style={{ display: "flex", flexDirection: "row", width: "77%" }}
+      >
         <div id={styles.input_container}>
           <p>lawNumber</p>
           <textarea
@@ -492,12 +441,26 @@ export default function Page() {
             value={nameSignText}
             onChange={(e) => setNameSign(e.target.value)}
           ></textarea>
-          <p>lawDaySign</p>
+          <p>LawDaySign</p>
           <textarea
             className={styles.input_area}
             id={styles.lawDaySign}
             value={lawDaySignText}
             onChange={(e) => setLawDaySign(e.target.value)}
+          ></textarea>
+          <p>lawDayActive</p>
+          <textarea
+            className={styles.input_area}
+            id={styles.lawDayActive}
+            value={lawDayActiveText}
+            onChange={(e) => setLawDayActive(e.target.value)}
+          ></textarea>
+          <p>LawNameDisplay</p>
+          <textarea
+            className={styles.input_area}
+            id={styles.lawDaySign}
+            value={lawNameDisplayText}
+            onChange={(e) => setLawNameDisplayText(e.target.value)}
           ></textarea>
           <p>lawDescription</p>
           <textarea
@@ -530,7 +493,7 @@ export default function Page() {
             ref={inputArea}
           ></textarea>
         </div>
-        <div className={styles.navi_container} style={{ left: 566 }}>
+        <div className={styles.navi_container} style={{ left: 460 }}>
           <button
             type="button"
             className={styles.navi_btb}
