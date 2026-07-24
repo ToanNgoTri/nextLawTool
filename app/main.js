@@ -1819,7 +1819,7 @@ export async function processAllLaws(law) {
 // createChunkEmbedding — giữ lại nếu cần dùng đơn lẻ
 // =========================
 
-export async function Push(textForMachine, lawInfoPush, fullText) {
+export async function Push(textForMachine, lawInfoPush, fullText, silent = false) {
   try {
     const lawNumberForPush = createNameLawForPush(lawInfoPush);
 
@@ -1867,12 +1867,12 @@ export async function Push(textForMachine, lawInfoPush, fullText) {
 
       const data = await res.json();
 
-      alert("Successfully embedded law!");
+      if (!silent) alert("Successfully embedded law!");
 
       if (!embed.ok) {
         const errorText = await embed.text();
         console.error("Error response from server:", errorText);
-        alert("Failed to embed law: " + errorText);
+        if (!silent) alert("Failed to embed law: " + errorText);
         return;
       } else {
       }

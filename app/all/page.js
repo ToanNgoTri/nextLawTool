@@ -181,7 +181,6 @@ export default function Page() {
         );
         setContentOutput(result.partTwo);
       }
-      setLawInfoPush(result.lawInfo);
 
       let yearSign = parseInt(result.lawInfo["lawDaySign"].getYear()) + 1900;
       let lawNumberForPush =
@@ -189,6 +188,16 @@ export default function Page() {
         (!result.lawInfo["lawNumber"].match(/(?<=\d\W)\d{4}/gim)
           ? "(" + yearSign + ")"
           : "");
+
+      // Đã có trong DB => bỏ qua, KHÔNG push, nhảy tiếp luôn
+      if (lawNumberForPush in ObjectLawPair) {
+        console.log("Luật đã có trong DB => bỏ qua:", lawNumberForPush);
+        NaviNext();
+        return;
+      }
+
+      // Chưa có trong DB => tiến hành đẩy dữ liệu
+      setLawInfoPush(result.lawInfo);
 
       // Tự điền các ô hiển thị như /once
       setLawDescription(result.lawInfo["lawDescription"]);
@@ -204,11 +213,6 @@ export default function Page() {
           ? dayActive.toISOString()
           : (dayActive ?? ""),
       );
-
-      // Đã có trong DB => bỏ qua, nhảy tiếp
-      if (lawNumberForPush in ObjectLawPair) {
-        NaviNext();
-      }
 
       console.log("lawDescription", result.lawInfo["lawDescription"]);
       console.log("lawNumber", result.lawInfo["lawNumber"]);
@@ -241,7 +245,7 @@ export default function Page() {
   useEffect(() => {
     if (Object.keys(textForMachine).length) {
       setTimeout(() => {
-        Push(textForMachine, lawInfoPush, fullText)
+        Push(textForMachine, lawInfoPush, fullText, true)
           .then((res) => {
             console.log(res);
 
@@ -559,7 +563,7 @@ export default function Page() {
             style={{ backgroundColor: "red" }}
             onClick={() =>
               textForMachine
-                ? Push(textForMachine, lawInfoPush, fullText)
+                ? Push(textForMachine, lawInfoPush, fullText, true)
                 : alert("Chưa chuyển đổi nội dung")
             }
           >
