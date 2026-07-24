@@ -189,10 +189,9 @@ export default function Page() {
           ? "(" + yearSign + ")"
           : "");
 
-      // Đã có trong DB => bỏ qua, KHÔNG push, nhảy tiếp luôn
+      // Đã có trong DB => bỏ qua, KHÔNG push (không tự nhảy tiếp)
       if (lawNumberForPush in ObjectLawPair) {
         console.log("Luật đã có trong DB => bỏ qua:", lawNumberForPush);
-        NaviNext();
         return;
       }
 
@@ -226,8 +225,7 @@ export default function Page() {
       console.log("roleSign", result.lawInfo["roleSign"]);
     } catch (e) {
       beep();
-      console.log("Lỗi getInfo => bỏ qua, nhảy tiếp:", e);
-      NaviNext();
+      console.log("Lỗi getInfo => bỏ qua (không tự nhảy tiếp):", e);
     }
   }
   useEffect(() => {
@@ -242,25 +240,27 @@ export default function Page() {
     }
   }, [lawInfoPush]);
 
-  useEffect(() => {
-    if (Object.keys(textForMachine).length) {
-      setTimeout(() => {
-        Push(textForMachine, lawInfoPush, fullText, true)
-          .then((res) => {
-            console.log(res);
-
-            // Push xong (thành công hay thất bại) đều nhảy tiếp
-            setTimeout(() => {
-              NaviNext();
-            }, 3000);
-          })
-          .catch((e) => {
-            console.log("Lỗi Push => bỏ qua, nhảy tiếp:", e);
-            NaviNext();
-          });
-      }, 1000);
-    }
-  }, [textForMachine]);
+  // Đã tắt tự động Push và tự động chuyển trang (NaviNext).
+  // Dùng nút "Push" và nút "Next" để thao tác thủ công.
+  // useEffect(() => {
+  //   if (Object.keys(textForMachine).length) {
+  //     setTimeout(() => {
+  //       Push(textForMachine, lawInfoPush, fullText, true)
+  //         .then((res) => {
+  //           console.log(res);
+  //
+  //           // Push xong (thành công hay thất bại) đều nhảy tiếp
+  //           setTimeout(() => {
+  //             NaviNext();
+  //           }, 3000);
+  //         })
+  //         .catch((e) => {
+  //           console.log("Lỗi Push => bỏ qua, nhảy tiếp:", e);
+  //           NaviNext();
+  //         });
+  //     }, 1000);
+  //   }
+  // }, [textForMachine]);
 
   async function clickToConvertContent(contentOutputText) {
     try {
@@ -273,8 +273,7 @@ export default function Page() {
       setTextForMachine(result.data);
     } catch (e) {
       beep();
-      console.log("Lỗi convert content => bỏ qua, nhảy tiếp:", e);
-      NaviNext();
+      console.log("Lỗi convert content => bỏ qua (không tự nhảy tiếp):", e);
     }
   }
 

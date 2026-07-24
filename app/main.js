@@ -40,7 +40,7 @@ export function addDaysToDate(dateStr, daysToAdd) {
   return date;
 }
 
-export function getRoleSign(contentRoleSign, nameSign) {
+export function getRoleSign(contentRoleSign, nameSign, unitPublish) {
   contentRoleSign = contentRoleSign.replace(/\n\(*đã k(ý|í)\)*/gim, "");
   contentRoleSign = contentRoleSign.replace(/\n\[daky\]/gim, "");
 
@@ -56,6 +56,14 @@ export function getRoleSign(contentRoleSign, nameSign) {
       .match(new RegExp(`.*(?=\n.*${nameSign[a]})`, "img"))[0]
       .toLowerCase(); //key.charAt(0).toUpperCase() + key.slice(1);
 
+    // Bỏ tiền tố hành chính ở đầu chức danh: TM. (thay mặt), KT. (ký thay),
+    // TL. (thừa lệnh), TUQ. (thừa ủy quyền), Q. (quyền) — không phải chức danh.
+    roleSignString = roleSignString.replace(/^\s*(tm|kt|tl|tuq|q)\.\s*/i, "");
+    // Bỏ marker "đã ký" nếu lọt vào dòng chức danh.
+    roleSignString = roleSignString
+      .replace(/\(*\s*đã k(ý|í)\s*\)*\s*:?/gi, "")
+      .trim();
+
     roleSignString =
       roleSignString.charAt(0).toUpperCase() + roleSignString.slice(1);
 
@@ -69,6 +77,16 @@ export function getRoleSign(contentRoleSign, nameSign) {
     } else if (roleSignString.match(/chủ nhiệm/i)) {
       roleSignString = roleSignString.replace(/chủ nhiệm/i, "Chủ nhiệm");
     }
+
+    // Cơ quan ban hành là Ủy ban Thường vụ Quốc hội: khối ký chỉ ghi
+    // "Chủ tịch"/"Phó Chủ tịch" → bổ sung "Quốc hội" cho đầy đủ.
+    const isUBTVQH = (unitPublish || []).some((u) =>
+      /ủy ban thường vụ quốc hội/i.test(u),
+    );
+    if (isUBTVQH && /^(phó )?chủ tịch$/i.test(roleSignString.trim())) {
+      roleSignString = roleSignString.trim() + " Quốc hội";
+    }
+
     roleSignString = roleSignString.replace(/\s/gm, " ");
     roleSign.push(roleSignString);
   }
@@ -87,14 +105,25 @@ export function getArrangeUnitPublic(
   let unitPbDemo = [];
   // console.log('roleSignString', roleSignString);
 
+  // Cấp bậc CA/QĐ đứng CÙNG DÒNG với tên: Thiếu/Trung/Thượng/Đại + úy/tá/tướng.
+  const rankRe = /(thiếu|trung|thượng|đại)\s*(úy|uý|tá|tướng)\s*/i;
+
   nameSignArrayDemo.map((nameSignDemo, i) => {
+    // Dùng TÊN TRẦN (bỏ cấp bậc) để TÌM cho khớp dù ô "Người ký" có/không có
+    // cấp bậc; nhưng GIỮ NGUYÊN dòng khớp trong khối chữ ký (kèm cấp bậc).
+    const nameKey = nameSignDemo.replace(rankRe, "").trim();
+
     let nameSignString = roleSignString.match(
-      new RegExp(`.*${nameSignDemo}.*`, "img"),
+      new RegExp(`.*${nameKey}.*`, "img"),
     )[0];
+    // Bỏ tiền tố "Đã ký:" / "(đã ký)" nếu dính vào tên người ký (giữ cấp bậc).
+    nameSignString = nameSignString
+      .replace(/\(*\s*đã k(ý|í)\s*\)*\s*:?/gi, "")
+      .trim();
 
     nameSign.push(nameSignString);
     let nameSignStringEffectArea = roleSignString.match(
-      new RegExp(`(\.*\\n){0,3}\.*${nameSignDemo}\.*`, "img"),
+      new RegExp(`(\.*\\n){0,3}\.*${nameKey}\.*`, "img"),
     )[0];
     //    let nameSignStringEffectArea = roleSignString.match(new RegExp(`${roleSignString.match(new RegExp(`(\.*\\n){0,3}\.*${nameSignDemo}\.*`,'img'))[0]  }`,'img'))[0]
     nameSignStringEffectArea = nameSignStringEffectArea.replace(/\n/gim, " ");
@@ -778,7 +807,7 @@ export async function convertBareTextInfo(
       .trim();
   }
 
-  roleSign = getRoleSign(partOne, nameSignArrayDemo);
+  roleSign = getRoleSign(partOne, nameSignArrayDemo, unitPublishAray);
 
   nameSign = getArrangeUnitPublic(
     partOne,
@@ -876,7 +905,7 @@ export async function getNormalTextInfo(
   // console.log('unitPublish',unitPublish);
 
   let contentRoleSign = roleSignText;
-  roleSign = getRoleSign(contentRoleSign, nameSignArrayDemo);
+  roleSign = getRoleSign(contentRoleSign, nameSignArrayDemo, unitPublishAray);
 
   lawDayActive = getLawDayActive(contentText, lawDaySign);
 

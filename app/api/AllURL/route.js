@@ -81,88 +81,83 @@ async function eachRun(url) {
       ? document.querySelector(".div-table").innerText
       : "";
 
-    let lawNumber;
-    let unitPublish;
-    let lawKind;
-    let nameSign;
-    let lawDaySign;
-    let lawDescription;
-    lawDescription = document.querySelector(".the-document-title")
-      ? document.querySelector(".the-document-title").innerText
-      : "";
+    let lawNumber = "";
+    let unitPublish = "";
+    let lawKind = "";
+    let nameSign = "";
+    let lawDaySign = "";
+    let lawDescription = "";
 
-    lawDescription = lawDescription.replace(/^ */, "");
+    // ─── Đọc bảng thuộc tính theo NHÃN thay vì theo vị trí hàng/cột ───
+    // Bảng .div-table có thể 2 hoặc 4 cột: (nhãn, giá trị[, nhãn, giá trị]).
+    // Map theo nhãn để đúng cho MỌI loại VB (Luật, Pháp lệnh, VBHN, Thông tư…)
+    // dù thứ tự hàng thay đổi — trước đây dùng tr:nth-child nên hay lấy lệch.
+    const tableMap = {};
+    document.querySelectorAll(".div-table tr").forEach((tr) => {
+      const tds = Array.from(tr.querySelectorAll("td"));
+      for (let i = 0; i + 1 < tds.length; i += 2) {
+        const key = tds[i].innerText
+          .trim()
+          .toLowerCase()
+          .replace(/[:\s]+$/g, "");
+        const val = tds[i + 1].innerText.trim();
+        if (key && !(key in tableMap)) tableMap[key] = val;
+      }
+    });
+    const pickField = (...keys) => {
+      for (const k of keys) {
+        const found = Object.keys(tableMap).find((label) => label.includes(k));
+        if (found && tableMap[found]) return tableMap[found];
+      }
+      return "";
+    };
+    const cell = (r, c) => {
+      const el = document.querySelector(
+        `.div-table tr:nth-child(${r}) td:nth-child(${c})`,
+      );
+      return el ? el.innerText.trim() : "";
+    };
+
+    lawNumber = pickField("số hiệu");
+    unitPublish = pickField("cơ quan ban hành", "nơi ban hành");
+    lawKind = pickField("loại văn bản");
+    nameSign = pickField("người ký");
+    lawDaySign = pickField("ngày ban hành", "ngày ký");
+    lawDescription = pickField("trích yếu", "tên văn bản");
+
+    // Fallback theo vị trí cũ nếu không map được theo nhãn.
     if (tableInfomation.match(/VBHN/)) {
-      lawNumber = document.querySelector(
-        ".div-table tr:nth-child(1) td:nth-child(2)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(1) td:nth-child(2)")
-            .innerText
-        : "";
-      lawNumber = lawNumber.replace(/(^ | $)/gim, "");
-      lawNumber = lawNumber.match(/^\d\//gim) ? `0${lawNumber}` : lawNumber;
-
-      unitPublish = document.querySelector(
-        ".div-table tr:nth-child(2) td:nth-child(4)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(2) td:nth-child(4)")
-            .innerText.trim()
-        : "";
-
-      lawKind = document.querySelector(
-        ".div-table tr:nth-child(2) td:nth-child(2)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(2) td:nth-child(2)")
-            .innerText.trim()
-        : "";
-
-      nameSign = document.querySelector(
-        ".div-table tr:nth-child(3) td:nth-child(4)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(3) td:nth-child(4)")
-            .innerText.trim()
-        : "";
-
-      lawDaySign = document.querySelector(
-        ".div-table tr:nth-child(1) td:nth-child(4)"
-      ).innerText;
+      if (!lawNumber) lawNumber = cell(1, 2);
+      if (!unitPublish) unitPublish = cell(2, 4);
+      if (!lawKind) lawKind = cell(2, 2);
+      if (!nameSign) nameSign = cell(3, 4);
+      if (!lawDaySign) lawDaySign = cell(1, 4);
+      if (!lawDescription) lawDescription = cell(4, 2);
     } else {
-      lawNumber = document.querySelector(
-        ".div-table tr:nth-child(2) td:nth-child(2)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(2) td:nth-child(2)")
-            .innerText
-        : "";
-      lawNumber = lawNumber.replace(/(^ | $)/gim, "");
-      lawNumber = lawNumber.match(/^\d\//gim) ? `0${lawNumber}` : lawNumber;
+      if (!lawNumber) lawNumber = cell(2, 2);
+      if (!unitPublish) unitPublish = cell(1, 2);
+      if (!lawKind) lawKind = cell(3, 2);
+      if (!nameSign) nameSign = cell(3, 4);
+      if (!lawDaySign) lawDaySign = cell(5, 2);
+      if (!lawDescription) lawDescription = cell(4, 2);
+    }
 
-      unitPublish = document.querySelector(
-        ".div-table tr:nth-child(1) td:nth-child(2)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(1) td:nth-child(2)")
-            .innerText.trim()
-        : "";
+    // Chuẩn hóa số hiệu: "9/…" → "09/…".
+    lawNumber = lawNumber.replace(/(^ | $)/gim, "");
+    lawNumber = lawNumber.match(/^\d\//gim) ? `0${lawNumber}` : lawNumber;
 
-      lawKind = document.querySelector(
-        ".div-table tr:nth-child(3) td:nth-child(2)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(3) td:nth-child(2)")
-            .innerText.trim()
-        : "";
+    // Chuẩn hóa trích yếu.
+    lawDescription = lawDescription
+      .replace(/^ */, "")
+      .replace(/Sửa đổi/, "sửa đổi");
 
-      nameSign = document.querySelector(
-        ".div-table tr:nth-child(3) td:nth-child(4)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(3) td:nth-child(4)")
-            .innerText.trim()
-        : "";
-
-      lawDaySign = document.querySelector(
-        ".div-table tr:nth-child(4) td:nth-child(2)"
-      )
-        ? document.querySelector(".div-table tr:nth-child(4) td:nth-child(2)")
-            .innerText
-        : "";
+    // Lưới an toàn: lawDaySign phải là ngày dd/mm/yyyy; nếu không, lấy lại
+    // đúng ngày ngay sau nhãn "Ngày ban hành" trong text bảng.
+    if (!/\d{1,2}\/\d{1,2}\/\d{4}/.test(lawDaySign)) {
+      const md = tableInfomation.match(
+        /ngày ban hành[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+      );
+      lawDaySign = md ? md[1] : "";
     }
 
     return {
