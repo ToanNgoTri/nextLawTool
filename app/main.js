@@ -239,15 +239,18 @@ export async function getLawRelated(text, dayActive, ObjectLawPair, lawNumber) {
   let lawRelatedDemo = text.match(
     /(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/\D{1,8}\-[^(\s|,|.| |\:|\"|\'|\;|\{|\}|”)]+/gi,
   );
+
   lawRelatedDemo =
     lawRelatedDemo &&
-    text.match(/(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/QH\d{1,2}/gi)
+    text.match(/(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/(QH|UBTVQH)\d{1,2}/gi)
       ? [
           ...lawRelatedDemo,
-          ...text.match(/(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/QH\d{1,2}/gi),
+          ...text.match(
+            /(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/(QH|UBTVQH)\d{1,2}/gi,
+          ),
         ]
       : !lawRelatedDemo
-        ? text.match(/(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/QH\d{1,2}/gi)
+        ? text.match(/(?<!(mẫu( số)?|ví dụ.*)) \d+\/?\d*\/(QH|UBTVQH)\d{1,2}/gi)
         : lawRelatedDemo;
 
   let lawRelatedDemo2 = lawRelatedDemo
@@ -544,6 +547,7 @@ export function convertPartTwo(partOne, nameSign) {
 
   for (let t = 0; t <= 60; t++) {
     let clause;
+    // console.log(partOne);
 
     clause = partOne.match(`(?<=(\n.*){${t}}).*`, "im")[[0]];
     // console.log(clause);
@@ -697,7 +701,7 @@ export function convertPartOneOfficialDispatch(contentInputText) {
   let b11 = b10.replace(/\[\d*\]/gim, ""); // bỏ chỉ mục số đi
   // console.log("b12",b4);
 
-  let b12 = b11.replace(/(.*\n)*Kính gửi.*\n/gim, "");
+  let b12 = b11;
   // b12 = b12.replace(/^(\d+\w?)./gim, "$1.");
   let b13 = b12.replace(/  +/gim, " "); // bỏ khoảng cách 2 space
   // console.log("b13", b13);
@@ -775,7 +779,39 @@ export function convertPartTwoOfficialDispatch(partOne, nameSign) {
   b17 = b17.replace(/\n*XÁC THỰC VĂN BẢN HỢP NHẤT(\n.*)*/gim, "");
   // console.log("b17", b17);
 
-  return b17;
+  console.log("b17", b17);
+  
+  let introduceText = b17.match(/(.*\n)*(QUYẾT ĐỊNH):.*/gim)
+    ? b17.match(/(.*\n)*(QUYẾT ĐỊNH):.*/gim)[0]
+    : b17.match(
+          /.*(\n.*)*(QUYẾT ĐỊNH|CÔNG VĂN|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|QUY CHẾ|CHƯƠNG TRÌNH|KẾ HOẠCH)( PHỐI HỢP| LIÊN NGÀNH)?\n(.*\n)*(_|(- )?Căn cứ)/gm,
+        )
+      ? b17.match(
+          /.*(\n.*)*(QUYẾT ĐỊNH|CÔNG VĂN|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|QUY CHẾ|CHƯƠNG TRÌNH|KẾ HOẠCH)( PHỐI HỢP| LIÊN NGÀNH)?\n(.*\n)*(_|(- )?Căn cứ)/gm,
+        )[0]
+      : b17.match(/.*(\n.*)*V\/v:.*/gim)[0];
+
+  // console.log("introduceText", introduceText);
+      introduceText=introduceText.replace(/(- )?Căn cứ.*\n/gm, "");
+            // introduceText=introduceText.replace(/\n_/gm, "");
+
+
+      
+  let b18 = b17.replace(
+    /(.*\n)*(QUYẾT ĐỊNH|CÔNG VĂN|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|QUY CHẾ|CHƯƠNG TRÌNH|KẾ HOẠCH)( PHỐI HỢP| LIÊN NGÀNH)?:.*\n/gm,
+    "",
+  );
+  b18 = b18.replace(
+    /.*(\n.*)*(QUYẾT ĐỊNH|CÔNG VĂN|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|QUY CHẾ|CHƯƠNG TRÌNH|KẾ HOẠCH)( PHỐI HỢP| LIÊN NGÀNH)?\n(.*\n)*(_|(- )?Căn cứ)*\n/gm,
+    "",
+  );
+  b18 = b18.replace(/.*(\n.*)*Kính gửi:.*\n(-.*\n)*/gim, "");
+
+  // console.log("b18", b18);
+  b18 = b18.replace(/.*(\n.*)*\n((- )?căn cứ.*)\n((- )?căn cứ.*\n)+/gim, "");
+
+
+  return { text: b18, descriptionText: introduceText };
 }
 
 export async function convertBareTextInfo(
@@ -794,15 +830,43 @@ export async function convertBareTextInfo(
 
   // nameSign = nameSignArrayDemo;
   let partOne, partTwo;
-  if (lawNumber.match(/^\d+\/(TAND|VKS).+\-/gim)) {
+  if (
+    !lawNumber.match(
+      // /^\d+\/(TANDTC|VKSTC|BCA|BQP|CT|V11|H41|BHXH|C03|HD|KH|V04|CSHS|C12|QĐ)\-/gim,
+      /\d+\/(TT|NĐ|QH|UBTVQH)/gim,
+    )
+  ) {
     partOne = convertPartOneOfficialDispatch(inputText); ////////////////////////////////////////////////////////////////////////////////////
+    // console.log('partOne',partOne);
 
-    partTwo = convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo);
+    partTwo = convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo).text;
 
-    //   lawDescription = convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo)
-    // .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
-    // .replace(/\.$/gim, "")
-    // .trim();
+    // console.log(convertPartTwoOfficialDispatch(
+    //   partOne,
+    //   nameSignArrayDemo,
+    // ).descriptionText);
+
+    lawDescription = convertPartTwoOfficialDispatch(
+      partOne,
+      nameSignArrayDemo,
+    ).descriptionText.match(
+      new RegExp(
+        `(?<=(QUYẾT ĐỊNH|CÔNG VĂN|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|QUY CHẾ|CHƯƠNG TRÌNH|KẾ HOẠCH)( PHỐI HỢP| LIÊN NGÀNH)?\n)(.*\n)*(?=(_|(- )?Căn cứ)+)`,
+        "mg",
+      ),
+    )
+      ? convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo)
+          .descriptionText.match(
+            new RegExp(
+              `(?<=(QUYẾT ĐỊNH|CÔNG VĂN|CHỈ THỊ|BÁO CÁO|HƯỚNG DẪN|QUY CHẾ|CHƯƠNG TRÌNH|KẾ HOẠCH)( PHỐI HỢP| LIÊN NGÀNH)?\n)(.*\n)*(?=(_|(- )?Căn cứ)+)`,
+              "mg",
+            ),
+          )[0]
+          .replace(/\n/gim, " ")
+          .trim()
+      : convertPartTwoOfficialDispatch(partOne, nameSignArrayDemo).descriptionText.match(/(?<=V\/v: *).*/gim)[0].trim();
+      // console.log("lawDescription", lawDescription);
+       lawDescription = !lawDescription.match(/^về việc/img)?'về việc ':'' + lawDescription !== lawDescription.toUpperCase()?lawDescription.charAt(0).toLowerCase() + lawDescription.slice(1):lawDescription;
   } else {
     partOne = convertPartOne(inputText);
 
@@ -812,6 +876,8 @@ export async function convertBareTextInfo(
       .descriptionText.match(new RegExp(`(?<=ban hành )(.*)\.$`, "m"))[0]
       .replace(/\.$/gim, "")
       .trim();
+             lawDescription = lawDescription.charAt(0).toLowerCase() + lawDescription.slice(1);
+
   }
 
   roleSign = getRoleSign(partOne, nameSignArrayDemo, unitPublishAray);
@@ -847,8 +913,9 @@ export async function convertBareTextInfo(
     );
   }
 
-  lawDaySign = lawDaySign.includes('/')?addDaysToDate(lawDaySign, 0):new Date(lawDaySign);
-
+  lawDaySign = lawDaySign.includes("/")
+    ? addDaysToDate(lawDaySign, 0)
+    : new Date(lawDaySign);
 
   lawDescription = lawKind.match(/Luật/gim)
     ? lawDescription + " số " + lawNumber
@@ -865,6 +932,8 @@ export async function convertBareTextInfo(
       : lawNameDisplay +
         " " +
         lawDescription.replace(new RegExp(`^${lawKind} `), "");
+
+  lawDescription = lawDescription.replace(/(;|\.)$/gim, "");
 
   lawInfo["lawDescription"] = lawDescription;
   lawInfo["lawNumber"] = lawNumber;
@@ -924,7 +993,9 @@ export async function getNormalTextInfo(
     lawNumber,
   );
 
-  lawDaySign = lawDaySign.includes('/')?addDaysToDate(lawDaySign, 0):new Date(lawDaySign);
+  lawDaySign = lawDaySign.includes("/")
+    ? addDaysToDate(lawDaySign, 0)
+    : new Date(lawDaySign);
 
   // console.log("lawDescription", lawDescription);
 
@@ -1596,8 +1667,11 @@ export function convertContentOfficialDispatch(contentOutputText) {
     console.log("nếu có chương ...");
     const chapterArray = i4.match(/^(V|I|X)+\..*/gm);
     if (!chapterArray) {
+      console.log("1");
       data = parseByMinDepthHeadings(i4, stripped);
     } else {
+      // console.log("12");
+
       const firstChapterIdx = i4.indexOf(chapterArray[0]);
       const header = i4.slice(0, firstChapterIdx).trim();
       if (header) data.push({ " ": header });
@@ -1613,7 +1687,11 @@ export function convertContentOfficialDispatch(contentOutputText) {
         const chStripped = stripQuotedBlocks(chContent);
         // ← Giờ trả về object lồng nhau thay vì array flat
         const chTree = buildTree(chContent, chStripped);
-        data.push({ [chapterArray[a]]: chTree });
+        function objectToArray(obj) {
+          return Object.entries(obj).map(([key, value]) => ({ [key]: value }));
+        }
+        // console.log("chTree", chTree);
+        data.push({ [chapterArray[a]]: objectToArray(chTree) });
       }
     }
   } else if (i4.match(/(như sau|sau đây|lưu ý):\n(A|B|C|D|E|F|G|H)\./gm)) {
@@ -1798,7 +1876,6 @@ async function embedText(text) {
   return data.embeddings[0];
 
   // console.log("Embedding result:", data);
-
 }
 
 // ─── processAllLaws — trả về mảng chunks đã embed, không ghi DB ───────────────
@@ -1855,7 +1932,12 @@ export async function processAllLaws(law) {
 // createChunkEmbedding — giữ lại nếu cần dùng đơn lẻ
 // =========================
 
-export async function Push(textForMachine, lawInfoPush, fullText, silent = false) {
+export async function Push(
+  textForMachine,
+  lawInfoPush,
+  fullText,
+  silent = false,
+) {
   try {
     const lawNumberForPush = createNameLawForPush(lawInfoPush);
 

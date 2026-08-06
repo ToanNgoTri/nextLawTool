@@ -85,33 +85,6 @@ export default function Page() {
     );
   }
 
-  // useEffect(() => {
-  // if(contentInputText){
-
-  //   getInfo()
-  // }
-
-  // }, [contentInputText])
-
-  // function beep() {
-  //   const audioContext = new (window.AudioContext ||
-  //     window.webkitAudioContext)();
-
-  //   // Tạo một oscillator (dao động) để phát âm thanh
-  //   const oscillator = audioContext.createOscillator();
-
-  //   // Cài đặt tần số của âm thanh
-  //   oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Tần số 440 Hz (A4)
-
-  //   // Kết nối oscillator đến output (loa)
-  //   oscillator.connect(audioContext.destination);
-
-  //   // Bắt đầu phát âm thanh
-  //   oscillator.start();
-
-  //   oscillator.stop(audioContext.currentTime + 1);
-  // }
-
   let lawInfo = {};
   let contentText = "";
 
@@ -280,7 +253,7 @@ export default function Page() {
     console.log("lawRelated", lawInfoPush.lawRelated);
 
     let result;
-    lawInfoPush["lawNumber"].match(/^\d+\/(TAND|VKS).+\-/gim)
+    !lawInfoPush["lawNumber"].match(/\d+\/(TT|NĐ|QH|UBTVQH)/gim)
       ? (result = convertContentOfficialDispatch(contentOutputText))
       : (result = convertContent(contentOutputText));
 
