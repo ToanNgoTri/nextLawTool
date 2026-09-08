@@ -16,25 +16,58 @@ const CHECK_BUTTONS = [
   // thêm nút mới ở đây, tối đa tới 11 hoặc hơn vẫn tự co giãn
 ];
 
+// luatvietnam.vn không còn tìm kiếm server-side trên tim-van-ban.html / tim-kiem.html
+// (mọi query string kiểu DocTypeIds=... đều trả "Không tìm thấy văn bản phù hợp").
+// Kết quả giờ nằm ở endpoint ajax bên dưới, với tên tham số dạng SỐ ÍT:
+// Keywords / DocTypeId / OrganId / FieldId, và mỗi request chỉ nhận 1 DocTypeId
+// => loại văn bản nào cần nhiều DocTypeId thì trả về nhiều URL.
+const SEARCH_AJAX = "https://luatvietnam.vn/van-ban/ajax/searchajax";
+
+function searchURL({ docTypeId, organId = 0, from = "", keywords = "" }) {
+  const params = new URLSearchParams({
+    Keywords: keywords,
+    DateFromString: from,
+    DateToString: "",
+    IsSearchExact: "0",
+    SearchByDate: "issueDate",
+    DocGroupId: "0",
+    DocTypeId: String(docTypeId),
+    EffectStatusId: "",
+    LanguageId: "1",
+    FieldId: "0",
+    OrganId: String(organId),
+    SearchOptions: "1",
+    PageSize: "100",
+    PageIndex: "1",
+  });
+  return `${SEARCH_AJAX}?${params.toString()}`;
+}
+
 const URL_MAP = {
-  nghidinh:
-    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=ngh%E1%BB%8B&search=&search=&DocTypeIds=11&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
-  thongtu:
-    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=&search=&DocTypeIds=21&DocTypeIds=22&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
-  vanbanhopnhat:
-    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=v%C4%83&search=v%C4%83n%20ph%C3%B2ng%20q&search=&DocTypeIds=59&OrganIds=325&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
-  nghiquyet:
-    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2025&DateToString=&search=&DocTypeIds=13&search=h%E1%BB%99i+%C4%91%E1%BB%93ng+th%E1%BA%A9m+p&OrganIds=141&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
-  luat:
-    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=lu%E1%BA%ADt&search=&search=&DocTypeIds=58&DocTypeIds=10&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
-  vksnd:
-    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=&SearchOptions=1&SearchByDate=issueDate&DateFromString=01%2F01%2F2024&DateToString=&search=c%C3%B4ng&DocTypeIds=3&search=&OrganIds=225&search=&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
-  tandtc:
-    "https://luatvietnam.vn/van-ban/tim-van-ban.html?keywords=h%C6%B0%E1%BB%9Bng%20d%E1%BA%ABn&SearchOptions=1&SearchByDate=issueDate&DateFromString=01/01/2025&DateToString=&search=&search=T%C3%92A%20%C3%81N%20NH%C3%82&search=&DocTypeIds=3&OrganIds=193&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&PageSize=100&PageIndex=1",
-  phaplenh:
-    "https://luatvietnam.vn/van-ban/tim-kiem.html?SearchKeyword=&SearchOptions=1&SearchByDate=issue&DateFromString=&DateToString=&search=&search=&search=&DocTypeIds=14&OrganIds=0&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=100&PageSize=100&PageIndex=1",
-  bca:
-    "https://luatvietnam.vn/van-ban/tim-kiem.html?SearchKeyword=&SearchOptions=1&SearchByDate=issue&DateFromString=&DateToString=&search=&search=&search=&DocTypeIds=17&DocTypeIds=4&DocTypeIds=3&DocTypeIds=20&DocTypeIds=16&DocTypeIds=5&DocTypeIds=1&DocTypeIds=28&DocTypeIds=34&DocTypeIds=35&DocTypeIds=52&DocTypeIds=92&OrganIds=41&FieldIds=0&LanguageId=0&SignerIds=0&SignerIds=0&RowAmount=100&PageSize=100&PageIndex=1",
+  nghidinh: [searchURL({ docTypeId: 11, from: "01/01/2025" })],
+  thongtu: [21, 22].map((docTypeId) =>
+    searchURL({ docTypeId, from: "01/01/2025" }),
+  ),
+  vanbanhopnhat: [
+    searchURL({ docTypeId: 59, organId: 325, from: "01/01/2025" }),
+  ],
+  nghiquyet: [searchURL({ docTypeId: 13, organId: 141, from: "01/01/2025" })],
+  luat: [58, 10].map((docTypeId) =>
+    searchURL({ docTypeId, from: "01/01/2025" }),
+  ),
+  vksnd: [searchURL({ docTypeId: 3, organId: 225, from: "01/01/2024" })],
+  tandtc: [
+    searchURL({
+      docTypeId: 3,
+      organId: 193,
+      from: "01/01/2025",
+      keywords: "hướng dẫn",
+    }),
+  ],
+  phaplenh: [searchURL({ docTypeId: 14 })],
+  bca: [17, 4, 3, 20, 16, 5, 1, 28, 34, 35, 52, 92].map((docTypeId) =>
+    searchURL({ docTypeId, organId: 41 }),
+  ),
 };
 
 const btnStyle = {
@@ -67,11 +100,19 @@ function Page() {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
 
-  async function runCheck(targetUrl) {
-    setURL(targetUrl);
+  async function runCheck(target) {
+    const urls = (Array.isArray(target) ? target : [target])
+      .flatMap((u) => String(u || "").split(/\s+/))
+      .filter(Boolean);
+    if (urls.length === 0) return;
+    if (urls.length === 1) setURL(urls[0]);
+
     setLoading(true);
     try {
-      const r = await fetch(`/api/check?url=` + encodeURIComponent(targetUrl));
+      const qs = urls
+        .map((u) => `url=${encodeURIComponent(u)}`)
+        .join("&");
+      const r = await fetch(`/api/check?${qs}`);
       const text = await r.text();
       let res = {};
       try {
