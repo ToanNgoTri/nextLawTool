@@ -41,6 +41,7 @@ export default function Page() {
 
   const [fullText, setFullText] = useState("");
   const [textForMachine, setTextForMachine] = useState({});
+  const [isPushing, setIsPushing] = useState(false);
 
   const inputArea = useRef(null);
   const outputArea = useRef(null);
@@ -261,6 +262,23 @@ export default function Page() {
     setTextForMachine(result.data);
   }
 
+  async function handlePush() {
+    if (isPushing) return;
+    if (!textForMachine) {
+      alert("Chưa chuyển đổi nội dung");
+      return;
+    }
+    setIsPushing(true);
+    try {
+      await Push(textForMachine, lawInfoPush, fullText);
+    } catch (e) {
+      beep();
+      console.log(e);
+    } finally {
+      setIsPushing(false);
+    }
+  }
+
   useEffect(() => {
     setLawInfoPush({
       ...lawInfoPush,
@@ -269,7 +287,7 @@ export default function Page() {
       lawKind: lawKindText,
       lawNumber: lawNumberText,
       lawDayActive: lawDayActiveText ? new Date(lawDayActiveText) : null,
-       lawDaySign: lawDaySignText ? new Date(lawDaySignText) : null,
+      lawDaySign: lawDaySignText ? new Date(lawDaySignText) : null,
     });
 
     if (Object.keys(lawInfoPush).length > 0) {
@@ -281,7 +299,7 @@ export default function Page() {
     lawKindText,
     lawNumberText,
     lawDayActiveText,
-    lawDaySignText
+    lawDaySignText,
   ]);
 
   function goToStartInput() {
@@ -324,6 +342,20 @@ export default function Page() {
 
   return (
     <div id={styles.container}>
+      <style>{`
+        @keyframes push-spin { to { transform: rotate(360deg); } }
+        .push-spinner {
+          display: inline-block;
+          width: 14px;
+          height: 14px;
+          margin-right: 6px;
+          vertical-align: -2px;
+          border: 2px solid rgba(255, 255, 255, 0.4);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: push-spin 0.7s linear infinite;
+        }
+      `}</style>
       <div style={{ display: "flex", flexDirection: "row" }}>
         <button style={{ width: "5%" }} onClick={() => copyContent()}>
           Copy
@@ -342,7 +374,10 @@ export default function Page() {
           onChange={(e) => setURL(e.target.value)}
         ></textarea>
       </div>
-      <div id={styles.inner_container} style={{ display: "flex", flexDirection: "row" ,width:'77%'}}>
+      <div
+        id={styles.inner_container}
+        style={{ display: "flex", flexDirection: "row", width: "77%" }}
+      >
         <div id={styles.input_container}>
           <p>lawNumber</p>
           <textarea
@@ -487,14 +522,22 @@ export default function Page() {
           </button>
           <button
             className={styles.btb}
-            style={{ backgroundColor: "red" }}
-            onClick={() =>
-              textForMachine
-                ? Push(textForMachine, lawInfoPush, fullText)
-                : alert("Chưa chuyển đổi nội dung")
-            }
+            style={{
+              backgroundColor: "red",
+              opacity: isPushing ? 0.7 : 1,
+              cursor: isPushing ? "not-allowed" : "pointer",
+            }}
+            disabled={isPushing}
+            onClick={() => handlePush()}
           >
-            Push
+            {isPushing ? (
+              <>
+                <span className="push-spinner" />
+                Pushing...
+              </>
+            ) : (
+              "Push"
+            )}
           </button>
           {/* <button
             className={styles.btb}

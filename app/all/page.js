@@ -44,6 +44,7 @@ export default function Page() {
 
   const [fullText, setFullText] = useState("");
   const [textForMachine, setTextForMachine] = useState({});
+  const [isPushing, setIsPushing] = useState(false);
 
   const inputArea = useRef(null);
   const outputArea = useRef(null);
@@ -287,6 +288,23 @@ export default function Page() {
     }
   }
 
+  async function handlePush() {
+    if (isPushing) return;
+    if (!textForMachine) {
+      alert("Chưa chuyển đổi nội dung");
+      return;
+    }
+    setIsPushing(true);
+    try {
+      await Push(textForMachine, lawInfoPush, fullText, true);
+    } catch (e) {
+      beep();
+      console.log(e);
+    } finally {
+      setIsPushing(false);
+    }
+  }
+
   function getAllURL() {
     console.log(url);
 
@@ -391,6 +409,20 @@ export default function Page() {
 
   return (
     <div id={styles.container}>
+      <style>{`
+        @keyframes push-spin { to { transform: rotate(360deg); } }
+        .push-spinner {
+          display: inline-block;
+          width: 14px;
+          height: 14px;
+          margin-right: 6px;
+          vertical-align: -2px;
+          border: 2px solid rgba(255, 255, 255, 0.4);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: push-spin 0.7s linear infinite;
+        }
+      `}</style>
       <div style={{ display: "flex", flexDirection: "row" }}>
         <button style={{ width: "5%" }} onClick={() => copyContent()}>
           Copy
@@ -570,14 +602,22 @@ export default function Page() {
           </button>
           <button
             className={styles.btb}
-            style={{ backgroundColor: "red" }}
-            onClick={() =>
-              textForMachine
-                ? Push(textForMachine, lawInfoPush, fullText, true)
-                : alert("Chưa chuyển đổi nội dung")
-            }
+            style={{
+              backgroundColor: "red",
+              opacity: isPushing ? 0.7 : 1,
+              cursor: isPushing ? "not-allowed" : "pointer",
+            }}
+            disabled={isPushing}
+            onClick={() => handlePush()}
           >
-            Push
+            {isPushing ? (
+              <>
+                <span className="push-spinner" />
+                Pushing...
+              </>
+            ) : (
+              "Push"
+            )}
           </button>
           <button
             className={styles.btb}
