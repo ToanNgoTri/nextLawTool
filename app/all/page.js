@@ -275,7 +275,7 @@ export default function Page() {
         return;
       }
       let result;
-      !lawInfoPush["lawNumber"].match(/\d+\/(TT|NĐ|QH|UBTVQH)/gim)
+      !lawInfoPush["lawNumber"].match(/\d+\/(TT|NĐ|QH|UBTVQH|VBHN-LQ)/gim)
         ? (result = convertContentOfficialDispatch(contentOutputText))
         : (result = convertContent(contentOutputText));
 

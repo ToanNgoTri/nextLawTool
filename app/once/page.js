@@ -253,7 +253,7 @@ export default function Page() {
     console.log("lawRelated", lawInfoPush.lawRelated);
 
     let result;
-    !lawInfoPush["lawNumber"].match(/\d+\/(TT|NĐ|QH|UBTVQH)/gim)
+    !lawInfoPush["lawNumber"].match(/\d+\/(TT|NĐ|QH|UBTVQH|VBHN-LQ)/gim)
       ? (result = convertContentOfficialDispatch(contentOutputText))
       : (result = convertContent(contentOutputText));
 

@@ -779,7 +779,7 @@ export function convertPartTwoOfficialDispatch(partOne, nameSign) {
   b17 = b17.replace(/\n*XÁC THỰC VĂN BẢN HỢP NHẤT(\n.*)*/gim, "");
   // console.log("b17", b17);
 
-  console.log("b17", b17);
+  // console.log("b17", b17);
   
   let introduceText = b17.match(/(.*\n)*(QUYẾT ĐỊNH):.*/gim)
     ? b17.match(/(.*\n)*(QUYẾT ĐỊNH):.*/gim)[0]
@@ -833,7 +833,7 @@ export async function convertBareTextInfo(
   if (
     !lawNumber.match(
       // /^\d+\/(TANDTC|VKSTC|BCA|BQP|CT|V11|H41|BHXH|C03|HD|KH|V04|CSHS|C12|QĐ)\-/gim,
-      /\d+\/(TT|NĐ|QH|UBTVQH)/gim,
+      /\d+\/(TT|NĐ|QH|UBTVQH|VBHN-LQ)/gim,
     )
   ) {
     partOne = convertPartOneOfficialDispatch(inputText); ////////////////////////////////////////////////////////////////////////////////////
