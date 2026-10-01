@@ -18,6 +18,7 @@ import {
   getNormalTextInfo,
   convertContent,
   convertContentOfficialDispatch,
+  convertAppendix,
   beep,
   Push,
 } from "../main";
@@ -37,6 +38,13 @@ export default function Page() {
   const [roleSignText, setRoleSign] = useState("");
   const [lawRelatedText, setLawRelated] = useState("");
   const [contentInputText, setContentInput] = useState("");
+  const [tables, setTables] = useState([]); // bảng trong nội dung (lib/lawTables.js)
+  const [appendix, setAppendix] = useState([]); // phụ lục sau chữ ký (lib/lawAppendix.js)
+  // sửa tại chỗ 1 phụ lục (tên / nội dung) — có hiệu lực khi convert lại
+  const updateAppendix = (i, patch) =>
+    setAppendix((list) => list.map((a, k) => (k === i ? { ...a, ...patch } : a)));
+  const removeAppendix = (i) =>
+    setAppendix((list) => list.filter((_, k) => k !== i));
   const [contentOutputText, setContentOutput] = useState("");
   const [lawInfoPush, setLawInfoPush] = useState({});
   const [lawNameDisplayText, setLawNameDisplayText] = useState("");
@@ -280,8 +288,16 @@ export default function Page() {
         ? (result = convertContentOfficialDispatch(contentOutputText))
         : (result = convertContent(contentOutputText));
 
-      setFullText(result.fullText);
-      setTextForMachine(result.data);
+      // phụ lục (quy chế, danh mục…) nối vào CUỐI content (lib/lawAppendix.js)
+      const extra = Array.isArray(result.data)
+        ? convertAppendix(appendix)
+        : { items: [], text: "" };
+      setFullText(
+        extra.text ? result.fullText + "\n" + extra.text : result.fullText,
+      );
+      setTextForMachine(
+        extra.items.length ? [...result.data, ...extra.items] : result.data,
+      );
     } catch (e) {
       beep();
       console.log("Lỗi convert content => bỏ qua (không tự nhảy tiếp):", e);
@@ -296,7 +312,7 @@ export default function Page() {
     }
     setIsPushing(true);
     try {
-      await Push(textForMachine, lawInfoPush, fullText, true);
+      await Push(textForMachine, lawInfoPush, fullText, true, tables);
     } catch (e) {
       beep();
       console.log(e);
@@ -319,6 +335,8 @@ export default function Page() {
         setLawRelated(res.data.lawRelated);
         setRoleSign(res.data.roleSign);
         receivedRef.current = true; // cho phép getInfo tự chạy 1 lần
+        setTables(res.data.tables || []);
+        setAppendix(res.data.appendix || []);
         setContentInput(res.data.content);
       }),
     );
@@ -356,6 +374,8 @@ export default function Page() {
     setRoleSign("");
     setLawRelated("");
     setContentInput("");
+    setTables([]);
+    setAppendix([]);
     setContentOutput("");
 
     const clipText = await navigator.clipboard.readText();
@@ -635,6 +655,37 @@ export default function Page() {
             onChange={(e) => setContentOutput(e.target.value)}
             ref={outputArea}
           ></textarea>
+          <div style={{ marginTop: 12 }}>
+            <p>
+              Phụ lục / quy chế ({appendix.length}) — nối vào cuối nội dung khi
+              convert. Sửa xong phải bấm convert lại.
+            </p>
+            {appendix.map((a, i) => (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    style={{ flex: 1 }}
+                    value={a.title}
+                    placeholder="Tên phụ lục"
+                    onChange={(e) => updateAppendix(i, { title: e.target.value })}
+                  />
+                  <button onClick={() => removeAppendix(i)}>Xóa</button>
+                </div>
+                <textarea
+                  style={{ width: "99%", height: 400 }}
+                  value={a.text}
+                  onChange={(e) => updateAppendix(i, { text: e.target.value })}
+                ></textarea>
+              </div>
+            ))}
+            <button
+              onClick={() =>
+                setAppendix([...appendix, { title: "Phụ lục", text: "" }])
+              }
+            >
+              + Thêm phụ lục
+            </button>
+          </div>
         </div>
       </div>
     </div>

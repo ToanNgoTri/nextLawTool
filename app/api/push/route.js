@@ -6,11 +6,17 @@ const client = new MongoClient(process.env.MONGODB_URI);
 export async function POST(req) {
   const body = await req.json();
 
-  async function pushLawContent(info, content, id) {
+  async function pushLawContent(info, content, id, tables) {
     try {
       const database = client.db("LawMachine");
       const LawContent = database.collection("LawCollection");
-      await LawContent.insertOne({ _id: id, info, content });
+      // `tables` chỉ ghi khi văn bản có bảng (app cũ bỏ qua field này).
+      await LawContent.insertOne({
+        _id: id,
+        info,
+        content,
+        ...(Array.isArray(tables) && tables.length ? { tables } : {}),
+      });
       return true;
     } catch (error) {
       console.error("❌ Error in pushLawContent:", error);
@@ -62,7 +68,12 @@ export async function POST(req) {
 
 
   // // 🔹 Thực thi 3 thao tác
-  const ok1 = await pushLawContent(body.lawInfo, body.dataLaw, body.lawNumberForPush);
+  const ok1 = await pushLawContent(
+    body.lawInfo,
+    body.dataLaw,
+    body.lawNumberForPush,
+    body.tables,
+  );
   const ok2 = await pushLawSearch(
     body.lawInfo,
     body.lawNumberForPush,

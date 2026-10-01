@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 import { NextResponse, Request } from "next/server";
+import { extractTablesAndAppendix } from "../../lib/lawAppendix";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -19,6 +20,11 @@ export async function GET(request) {
     await page.goto(url, { waitUntil: "load" });
 
     let source = await page.content({ waitUntil: "domcontentloaded" });
+
+    // Phụ lục sau chữ ký (bỏ biểu mẫu) + bảng trong nội dung: thay bảng bằng các
+    // dòng text có tiền tố, lấy cấu trúc riêng (lib/lawAppendix.js, lib/lawTables.js).
+    // Phải chạy TRƯỚC khi đọc innerText bên dưới.
+    const { tables, appendix } = await extractTablesAndAppendix(page);
 
     const r = await page.evaluate(async () => {
       let bg_phantich = document.querySelectorAll(".bg_phantich"); // loại bỏ phần tử khong cần thiết
@@ -180,7 +186,7 @@ export async function GET(request) {
     });
 
     await browser.close();
-    return r;
+    return { ...r, tables, appendix };
   }
 
   let data = await eachRun(url);

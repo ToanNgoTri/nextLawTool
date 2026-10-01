@@ -1,3 +1,10 @@
+import { pruneTables, stripTableMarks } from "./lib/lawTables";
+import {
+  APPENDIX_MARK,
+  isAppendixKey,
+  parseAppendixBody,
+} from "./lib/lawAppendix";
+
 export function beep() {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -1472,6 +1479,27 @@ export function convertContent(contentOutputText) {
   return { data, fullText: i10 };
 }
 
+// Phụ lục / văn bản kèm theo (xem lib/lawAppendix.js): mỗi phụ lục thành 1 mục
+// cấp cao { APPENDIX_MARK + tên: [...] } để NỐI VÀO CUỐI content, kèm text để nối
+// vào fullText tìm kiếm.
+export function convertAppendix(appendix) {
+  const items = [];
+  const texts = [];
+  for (const a of appendix || []) {
+    if (!a || !a.text) continue;
+    const text = convertPartOne(a.text);
+    if (!text) continue;
+    // KHÔNG dùng convertContent: Phần/Chương không có Điều (chỉ có mục "1.",
+    // "1.1.") làm nó lỗi RemoveNoOrder. parseAppendixBody tách Phần > Chương >
+    // Mục > Điều, đoạn còn lại thành mục " " (xem lib/lawAppendix.js).
+    let data = parseAppendixBody(text);
+    if (!Array.isArray(data) || !data.length) data = [{ " ": text }];
+    items.push({ [APPENDIX_MARK + a.title]: data });
+    texts.push(a.title + "\n" + text);
+  }
+  return { items, text: texts.join("\n") };
+}
+
 export function convertContentOfficialDispatch(contentOutputText) {
   console.log("convertContentOfficialDispatch");
 
@@ -1750,7 +1778,7 @@ function cleanText(text = "") {
       text = String(text);
     }
   }
-  return text
+  return stripTableMarks(text)
     .replace(/\u00A0/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -1816,34 +1844,52 @@ function parseArticle({ law, articleTitle, articleContent }) {
   });
 }
 
-function walkNode({ node, law, chunks }) {
+// prefix: tên phụ lục (lib/lawAppendix.js) — gắn trước tiêu đề điều để
+// "Điều 5" của quy chế kèm theo không lẫn với Điều 5 của văn bản chính.
+function walkNode({ node, law, chunks, prefix = "" }) {
   if (node == null) return;
+  const withPrefix = (title) =>
+    prefix ? (title ? `${prefix} - ${title}` : prefix) : title;
   if (typeof node === "string") {
     const value = cleanText(node);
     if (!value) return;
-    chunks.push(...createChunks({ law, article: "", content: value }));
+    chunks.push(...createChunks({ law, article: withPrefix(""), content: value }));
     return;
   }
   if (Array.isArray(node)) {
-    for (const item of node) walkNode({ node: item, law, chunks });
+    for (const item of node) walkNode({ node: item, law, chunks, prefix });
     return;
   }
   if (typeof node === "object") {
     for (const [key, value] of Object.entries(node)) {
       const title = cleanText(key);
+      if (isAppendixKey(key)) {
+        // tên rút gọn: bỏ phần "(Ban hành kèm theo …)"
+        const name = title.replace(/\s*\(.*$/, "") || title;
+        walkNode({ node: value, law, chunks, prefix: name });
+        continue;
+      }
       if (REGEX.article.test(title) && typeof value === "string") {
         chunks.push(
-          ...parseArticle({ law, articleTitle: title, articleContent: value }),
+          ...parseArticle({
+            law,
+            articleTitle: withPrefix(title),
+            articleContent: value,
+          }),
         );
         continue;
       }
       if (typeof value === "string") {
         chunks.push(
-          ...createChunks({ law, article: title, content: cleanText(value) }),
+          ...createChunks({
+            law,
+            article: withPrefix(title),
+            content: cleanText(value),
+          }),
         );
         continue;
       }
-      walkNode({ node: value, law, chunks });
+      walkNode({ node: value, law, chunks, prefix });
     }
   }
 }
@@ -1937,6 +1983,7 @@ export async function Push(
   lawInfoPush,
   fullText,
   silent = false,
+  tables = [],
 ) {
   try {
     const lawNumberForPush = createNameLawForPush(lawInfoPush);
@@ -1977,7 +2024,9 @@ export async function Push(
           dataLaw: textForMachine,
           lawInfo: lawInfoPush,
           lawNumberForPush: lawNumberForPush,
-          contentText: fullText,
+          contentText: stripTableMarks(fullText),
+          // chỉ các bảng còn nằm trong nội dung cuối cùng (xem lib/lawTables.js)
+          tables: pruneTables(tables, textForMachine),
           // dataEmbedding: data,
         }),
       });
