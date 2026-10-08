@@ -1475,7 +1475,6 @@ export function convertContent(contentOutputText) {
     // setTextForMachine(data);
   }
 
-  console.table("data", data);
   return { data, fullText: i10 };
 }
 
@@ -1754,7 +1753,6 @@ export function convertContentOfficialDispatch(contentOutputText) {
     data = parseByMinDepthHeadings(i4, stripped);
   }
 
-  console.table("data", data);
   return { data, fullText: i4 };
 }
 

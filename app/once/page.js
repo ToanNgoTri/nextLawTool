@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 // import {getValueinArea} from '../../public/asset/'
 import styles from "../page.module.css";
 import { useSearchParams } from "next/navigation";
+import { isAppendixKey } from "../lib/lawAppendix";
 import {
   addDaysToDate,
   getRoleSign,
@@ -272,12 +273,17 @@ export default function Page() {
     const extra = Array.isArray(result.data)
       ? convertAppendix(appendix)
       : { items: [], text: "" };
+    if (appendix.length && !Array.isArray(result.data))
+      alert("Nội dung không ra dạng mảng — phụ lục KHÔNG được nối");
     setFullText(
       extra.text ? result.fullText + "\n" + extra.text : result.fullText,
     );
-    setTextForMachine(
-      extra.items.length ? [...result.data, ...extra.items] : result.data,
-    );
+    const finalData = extra.items.length
+      ? [...result.data, ...extra.items]
+      : result.data;
+    // data cuối cùng sẽ push (đã nối phụ lục)
+    console.log("final data", finalData);
+    setTextForMachine(finalData);
   }
 
   async function handlePush() {
@@ -586,6 +592,16 @@ export default function Page() {
             <p>
               Phụ lục / quy chế ({appendix.length}) — nối vào cuối nội dung khi
               convert. Sửa xong phải bấm convert lại.
+            </p>
+            <p style={{ color: "#26A69A" }}>
+              Đã nối vào nội dung (lần Get Content gần nhất):{" "}
+              {Array.isArray(textForMachine)
+                ? textForMachine
+                    .map((o) => Object.keys(o)[0])
+                    .filter(isAppendixKey)
+                    .map((k) => k.slice(1))
+                    .join(", ") || "chưa có phụ lục"
+                : "chưa convert"}
             </p>
             {appendix.map((a, i) => (
               <div key={i} style={{ marginBottom: 12 }}>
